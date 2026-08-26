@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<strings>
+    <string id="AppName">Indoor Interval Workout</string>
+    <string id="SettingsTitle">Indoor workout settings</string>
+    <string id="FtpTitle">FTP (W)</string>
+    <string id="SetCountTitle">Sets</string>
+    <string id="RepCountTitle">Repetitions</string>
+    <string id="WorkValueTitle">Work duration</string>
+    <string id="WorkUnitTitle">Work unit</string>
+    <string id="RecoveryValueTitle">Recovery duration</string>
+    <string id="RecoveryUnitTitle">Recovery unit</string>
+    <string id="SetRecoveryValueTitle">Recovery between sets</string>
+    <string id="SetRecoveryUnitTitle">Set recovery unit</string>
+    <string id="WorkPowerTitle">Work power</string>
+    <string id="RecoveryPowerTitle">Recovery power</string>
+    <string id="SetRecoveryPowerTitle">Set recovery power</string>
+    <string id="SecondsOption">Seconds</string>
+    <string id="MinutesOption">Minutes</string>
+    <string id="DurationMustBePositive">Duration must be at least 00:01</string>
+</strings>

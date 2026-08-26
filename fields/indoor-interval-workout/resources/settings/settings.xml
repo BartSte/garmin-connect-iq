@@ -1,0 +1,58 @@
+<settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <setting propertyKey="@Properties.ftp" title="@Strings.FtpTitle">
+        <settingConfig type="numeric" />
+    </setting>
+
+    <setting propertyKey="@Properties.set_count" title="@Strings.SetCountTitle">
+        <settingConfig type="numeric" />
+    </setting>
+
+    <setting propertyKey="@Properties.rep_count" title="@Strings.RepCountTitle">
+        <settingConfig type="numeric" />
+    </setting>
+
+    <setting propertyKey="@Properties.work_value" title="@Strings.WorkValueTitle">
+        <settingConfig type="numeric" />
+    </setting>
+
+    <setting propertyKey="@Properties.work_unit" title="@Strings.WorkUnitTitle">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.SecondsOption</listEntry>
+            <listEntry value="60">@Strings.MinutesOption</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.recovery_value" title="@Strings.RecoveryValueTitle">
+        <settingConfig type="numeric" />
+    </setting>
+
+    <setting propertyKey="@Properties.recovery_unit" title="@Strings.RecoveryUnitTitle">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.SecondsOption</listEntry>
+            <listEntry value="60">@Strings.MinutesOption</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.set_recovery_value" title="@Strings.SetRecoveryValueTitle">
+        <settingConfig type="numeric" />
+    </setting>
+
+    <setting propertyKey="@Properties.set_recovery_unit" title="@Strings.SetRecoveryUnitTitle">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.SecondsOption</listEntry>
+            <listEntry value="60">@Strings.MinutesOption</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.work_power" title="@Strings.WorkPowerTitle">
+        <settingConfig type="numeric" />
+    </setting>
+
+    <setting propertyKey="@Properties.recovery_power" title="@Strings.RecoveryPowerTitle">
+        <settingConfig type="numeric" />
+    </setting>
+
+    <setting propertyKey="@Properties.set_recovery_power" title="@Strings.SetRecoveryPowerTitle">
+        <settingConfig type="numeric" />
+    </setting>
+</settings>

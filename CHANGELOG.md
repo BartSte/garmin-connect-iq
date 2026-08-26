@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## Indoor Interval Workout
+
+### v0.1.0
+
+- Added a separate indoor interval field for the Garmin Edge Explore 2.
+- Added automatic ANT+ FE-C target-power control for work, recovery, and set recovery.
+- Required a connected trainer with target-power support before the workout countdown can start.
+- Added independent target-power settings with defaults of 280 W, 125 W, and 125 W.
+- Sent only the final current phase target when one update crosses multiple phase transitions.
+- Restored the current target after a compatible trainer reconnects.
+- Released trainer control after cancellation, completion, timer stop, timer reset, or application shutdown.
+- Used 0% basic resistance for release and a 0 W target when basic resistance is unavailable.
+- Kept FTP-based colors for actual power and the target-power badge.
+- Added on-device settings and unit coverage for interval and trainer-control decisions.
+
 ## Interval Workout
 
 ### v0.2.0
