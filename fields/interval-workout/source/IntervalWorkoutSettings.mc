@@ -72,6 +72,93 @@ module IntervalWorkoutSettings {
             :unit => 1
         };
     }
+
+    const PRESET_COUNT = 10;
+
+    function presetKey(slot as Number) as String {
+        return "workout_preset_" + slot.format("%d");
+    }
+
+    function readPreset(slot as Number) as Array or Null {
+        var value = Application.Storage.getValue(presetKey(slot));
+        if (!(value instanceof Lang.Array)) {
+            return null;
+        }
+        var preset = value as Array;
+        if (preset.size() != 9 || !(preset[0] instanceof Lang.String)) {
+            return null;
+        }
+        for (var i = 1; i < 9; i += 1) {
+            if (!(preset[i] instanceof Lang.Number)) {
+                return null;
+            }
+        }
+        if ((preset[1] as Number) < 1 || (preset[2] as Number) < 1
+            || (preset[3] as Number) < 1 || (preset[4] as Number) < 1
+            || (preset[5] as Number) < 0) {
+            return null;
+        }
+        for (var zone = 6; zone < 9; zone += 1) {
+            if ((preset[zone] as Number) < 1 || (preset[zone] as Number) > 7) {
+                return null;
+            }
+        }
+        return preset;
+    }
+
+    function savePreset(slot as Number, name as String) as Void {
+        var settings = load();
+        Application.Storage.setValue(presetKey(slot), [
+            name,
+            settings[:setCount],
+            settings[:repCount],
+            settings[:workSecs],
+            settings[:recoverySecs],
+            settings[:setRecoverySecs],
+            settings[:workZone],
+            settings[:recoveryZone],
+            settings[:setRecoveryZone]
+        ]);
+    }
+
+    function renamePreset(slot as Number, name as String) as Void {
+        var preset = readPreset(slot);
+        if (preset != null) {
+            (preset as Array)[0] = name;
+            Application.Storage.setValue(presetKey(slot), preset);
+        }
+    }
+
+    function deletePreset(slot as Number) as Void {
+        Application.Storage.deleteValue(presetKey(slot));
+    }
+
+    function loadPreset(slot as Number) as Boolean {
+        var preset = readPreset(slot);
+        if (preset == null) {
+            return false;
+        }
+        var values = preset as Array;
+        Application.Properties.setValue("set_count", values[1]);
+        Application.Properties.setValue("rep_count", values[2]);
+        Application.Properties.setValue("work_value", values[3]);
+        Application.Properties.setValue("work_unit", 1);
+        Application.Properties.setValue("recovery_value", values[4]);
+        Application.Properties.setValue("recovery_unit", 1);
+        Application.Properties.setValue("set_recovery_value", values[5]);
+        Application.Properties.setValue("set_recovery_unit", 1);
+        Application.Properties.setValue("work_zone", values[6]);
+        Application.Properties.setValue("recovery_zone", values[7]);
+        Application.Properties.setValue("set_recovery_zone", values[8]);
+        return true;
+    }
+
+    function presetSummary(preset as Array) as String {
+        return (preset[1] as Number).format("%d") + "x"
+            + (preset[2] as Number).format("%d") + " "
+            + IntervalWorkoutLogic.formatDuration(preset[3] as Number) + "/"
+            + IntervalWorkoutLogic.formatDuration(preset[4] as Number);
+    }
 }
 
 class IntervalWorkoutSettingsMenu extends WatchUi.Menu2 {
@@ -134,23 +221,49 @@ class IntervalWorkoutSettingsMenu extends WatchUi.Menu2 {
             :set_recovery_zone,
             null
         ));
+        addItem(new WatchUi.MenuItem(Rez.Strings.SavedWorkoutsTitle, null, :saved_workouts, null));
+    }
+
+    function refresh() as Void {
+        var settings = IntervalWorkoutSettings.load();
+        setSettingLabel(:ftp, IntervalWorkoutSettings.formatPickerValue(settings[:ftp], INTERVAL_PICKER_FTP));
+        setSettingLabel(:set_count, (settings[:setCount] as Number).format("%d"));
+        setSettingLabel(:rep_count, (settings[:repCount] as Number).format("%d"));
+        setSettingLabel(:work_duration, IntervalWorkoutLogic.formatDuration(settings[:workSecs]));
+        setSettingLabel(:recovery_duration, IntervalWorkoutLogic.formatDuration(settings[:recoverySecs]));
+        setSettingLabel(:set_recovery_duration, IntervalWorkoutLogic.formatDuration(settings[:setRecoverySecs]));
+        setSettingLabel(:work_zone, IntervalWorkoutLogic.zoneLabel(settings[:workZone]));
+        setSettingLabel(:recovery_zone, IntervalWorkoutLogic.zoneLabel(settings[:recoveryZone]));
+        setSettingLabel(:set_recovery_zone, IntervalWorkoutLogic.zoneLabel(settings[:setRecoveryZone]));
+    }
+
+    hidden function setSettingLabel(id as Lang.Symbol, label as String) as Void {
+        var item = getItem(findItemById(id));
+        if (item != null) {
+            (item as WatchUi.MenuItem).setSubLabel(label);
+        }
     }
 }
 
 class IntervalWorkoutSettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
 
     hidden var mApp as IntervalWorkoutApp;
+    hidden var mMenu as IntervalWorkoutSettingsMenu;
 
-    function initialize(app as IntervalWorkoutApp) {
+    function initialize(app as IntervalWorkoutApp, menu as IntervalWorkoutSettingsMenu) {
         Menu2InputDelegate.initialize();
         mApp = app;
+        mMenu = menu;
     }
 
     function onSelect(item as WatchUi.MenuItem) as Void {
         var id = item.getId();
         var settings = IntervalWorkoutSettings.load();
 
-        if (id == :ftp) {
+        if (id == :saved_workouts) {
+            var presets = new IntervalWorkoutPresetsMenu();
+            WatchUi.pushView(presets, new IntervalWorkoutPresetsDelegate(mApp, mMenu, presets), WatchUi.SLIDE_IMMEDIATE);
+        } else if (id == :ftp) {
             pushSinglePicker(
                 Rez.Strings.FtpTitle,
                 settings[:ftp],
@@ -524,6 +637,200 @@ class IntervalWorkoutInvalidDurationDelegate extends WatchUi.ConfirmationDelegat
     }
 
     function onResponse(value as WatchUi.Confirm) as Boolean {
+        return true;
+    }
+}
+
+class IntervalWorkoutPresetsMenu extends WatchUi.Menu2 {
+
+    function initialize() {
+        Menu2.initialize({:title => Rez.Strings.SavedWorkoutsTitle});
+        for (var slot = 0; slot < IntervalWorkoutSettings.PRESET_COUNT; slot += 1) {
+            addItem(new WatchUi.MenuItem("", null, slot, null));
+            refreshSlot(slot);
+        }
+    }
+
+    function refreshSlot(slot as Number) as Void {
+        var item = getItem(slot);
+        if (item == null) {
+            return;
+        }
+        var menuItem = item as WatchUi.MenuItem;
+        var prefix = (slot + 1).format("%d") + ". ";
+        var preset = IntervalWorkoutSettings.readPreset(slot);
+        if (preset == null) {
+            menuItem.setLabel(prefix + (WatchUi.loadResource(Rez.Strings.EmptyWorkout) as String));
+            menuItem.setSubLabel(null);
+        } else {
+            menuItem.setLabel(prefix + ((preset as Array)[0] as String));
+            menuItem.setSubLabel(IntervalWorkoutSettings.presetSummary(preset as Array));
+        }
+    }
+}
+
+class IntervalWorkoutPresetsDelegate extends WatchUi.Menu2InputDelegate {
+
+    hidden var mApp as IntervalWorkoutApp;
+    hidden var mRoot as IntervalWorkoutSettingsMenu;
+    hidden var mPresets as IntervalWorkoutPresetsMenu;
+
+    function initialize(app as IntervalWorkoutApp, root as IntervalWorkoutSettingsMenu, presets as IntervalWorkoutPresetsMenu) {
+        Menu2InputDelegate.initialize();
+        mApp = app;
+        mRoot = root;
+        mPresets = presets;
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        var slot = item.getId() as Number;
+        var actions = new IntervalWorkoutPresetActionsMenu(slot);
+        WatchUi.pushView(
+            actions,
+            new IntervalWorkoutPresetActionsDelegate(mApp, mRoot, mPresets, slot),
+            WatchUi.SLIDE_IMMEDIATE
+        );
+    }
+}
+
+class IntervalWorkoutPresetActionsMenu extends WatchUi.Menu2 {
+
+    function initialize(slot as Number) {
+        Menu2.initialize({:title => (slot + 1).format("%d")});
+        var preset = IntervalWorkoutSettings.readPreset(slot);
+        if (preset != null) {
+            addItem(new WatchUi.MenuItem(Rez.Strings.LoadWorkout, null, :load, null));
+        }
+        addItem(new WatchUi.MenuItem(Rez.Strings.SaveCurrentWorkout, null, :save, null));
+        if (preset != null) {
+            addItem(new WatchUi.MenuItem(Rez.Strings.RenameWorkout, null, :rename, null));
+            addItem(new WatchUi.MenuItem(Rez.Strings.DeleteWorkout, null, :delete, null));
+        }
+    }
+}
+
+class IntervalWorkoutPresetActionsDelegate extends WatchUi.Menu2InputDelegate {
+
+    hidden var mApp as IntervalWorkoutApp;
+    hidden var mRoot as IntervalWorkoutSettingsMenu;
+    hidden var mPresets as IntervalWorkoutPresetsMenu;
+    hidden var mSlot as Number;
+
+    function initialize(app as IntervalWorkoutApp, root as IntervalWorkoutSettingsMenu,
+                        presets as IntervalWorkoutPresetsMenu, slot as Number) {
+        Menu2InputDelegate.initialize();
+        mApp = app;
+        mRoot = root;
+        mPresets = presets;
+        mSlot = slot;
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        var id = item.getId();
+        if (id == :load) {
+            if (IntervalWorkoutSettings.loadPreset(mSlot)) {
+                mRoot.refresh();
+                mApp.reloadSettings();
+                WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+                WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+            }
+        } else if (id == :save) {
+            if (IntervalWorkoutSettings.readPreset(mSlot) != null) {
+                confirmAction(:save, Rez.Strings.ReplaceWorkoutQuestion);
+            } else {
+                showNamePicker(:save);
+            }
+        } else if (id == :rename) {
+            showNamePicker(:rename);
+        } else if (id == :delete) {
+            confirmAction(:delete, Rez.Strings.DeleteWorkoutQuestion);
+        }
+    }
+
+    function showNamePicker(action as Lang.Symbol) as Void {
+        var preset = IntervalWorkoutSettings.readPreset(mSlot);
+        var name = "Workout " + (mSlot + 1).format("%d");
+        if (preset != null) {
+            name = (preset as Array)[0] as String;
+        }
+        WatchUi.pushView(
+            new WatchUi.TextPicker(name),
+            new IntervalWorkoutPresetNameDelegate(mPresets, mSlot, action, name),
+            WatchUi.SLIDE_IMMEDIATE
+        );
+    }
+
+    hidden function confirmAction(action as Lang.Symbol, message as Lang.ResourceId) as Void {
+        WatchUi.pushView(
+            new WatchUi.Confirmation(WatchUi.loadResource(message) as String),
+            new IntervalWorkoutPresetConfirmDelegate(mPresets, mSlot, action),
+            WatchUi.SLIDE_IMMEDIATE
+        );
+    }
+}
+
+class IntervalWorkoutPresetNameDelegate extends WatchUi.TextPickerDelegate {
+
+    hidden var mPresets as IntervalWorkoutPresetsMenu;
+    hidden var mSlot as Number;
+    hidden var mAction as Lang.Symbol;
+    hidden var mDefaultName as String;
+
+    function initialize(presets as IntervalWorkoutPresetsMenu, slot as Number,
+                        action as Lang.Symbol, defaultName as String) {
+        TextPickerDelegate.initialize();
+        mPresets = presets;
+        mSlot = slot;
+        mAction = action;
+        mDefaultName = defaultName;
+    }
+
+    function onTextEntered(name as String, changed as Boolean) as Boolean {
+        var finalName = name == "" ? mDefaultName : name;
+        if (mAction == :save) {
+            IntervalWorkoutSettings.savePreset(mSlot, finalName);
+        } else {
+            IntervalWorkoutSettings.renamePreset(mSlot, finalName);
+        }
+        mPresets.refreshSlot(mSlot);
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+        WatchUi.requestUpdate();
+        return true;
+    }
+
+    function onCancel() as Boolean {
+        return true;
+    }
+}
+
+class IntervalWorkoutPresetConfirmDelegate extends WatchUi.ConfirmationDelegate {
+
+    hidden var mPresets as IntervalWorkoutPresetsMenu;
+    hidden var mSlot as Number;
+    hidden var mAction as Lang.Symbol;
+
+    function initialize(presets as IntervalWorkoutPresetsMenu, slot as Number,
+                        action as Lang.Symbol) {
+        ConfirmationDelegate.initialize();
+        mPresets = presets;
+        mSlot = slot;
+        mAction = action;
+    }
+
+    function onResponse(value as WatchUi.Confirm) as Boolean {
+        if (value == WatchUi.CONFIRM_YES) {
+            if (mAction == :save) {
+                var preset = IntervalWorkoutSettings.readPreset(mSlot);
+                if (preset != null) {
+                    IntervalWorkoutSettings.savePreset(mSlot, (preset as Array)[0] as String);
+                }
+            } else {
+                IntervalWorkoutSettings.deletePreset(mSlot);
+            }
+            mPresets.refreshSlot(mSlot);
+            WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+            WatchUi.requestUpdate();
+        }
         return true;
     }
 }

@@ -115,6 +115,14 @@ connection. Cancelling a picker preserves its old value. Changes made during a
 running workout are used after the activity is reset; they do not alter the
 locked session.
 
+To keep up to ten workouts on the Edge, open **Saved workouts** in the field's
+settings. Select an empty slot, choose **Save current workout**, and enter a
+name. To switch workouts later, select its slot and choose **Load workout**.
+Each saved slot also offers rename, replace, and delete actions. A saved workout
+includes sets, repetitions, durations, and target zones. FTP remains a shared
+setting, so loading a workout keeps the current FTP. Saved workouts stay on the
+device across restarts and `.prg` updates that retain the app UUID.
+
 Keep the UUID in `fields/interval-workout/manifest.xml` unchanged when replacing
 the sideloaded `.prg` so the new build continues to use the existing property
 storage. Existing phone/Store-style XML settings remain supported as an
