@@ -1,4 +1,5 @@
 import Toybox.Activity;
+import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Test;
 
@@ -198,4 +199,29 @@ function indoorWorkoutCancelResetsIntensity(logger as Test.Logger) as Boolean {
     view.handleTouch(200, 370);
     view.handleTouch(100, 200);
     return (view.phase() == INTERVAL_PHASE_READY) && (view.intensity() == 100);
+}
+
+(:test)
+function indoorWorkoutRendersAndUsesLayoutForTouch(logger as Test.Logger) as Boolean {
+    var reference = Graphics.createBufferedBitmap({:width => 240, :height => 400});
+    var bitmap = reference.get() as Graphics.BufferedBitmap;
+    var dc = bitmap.getDc();
+    var view = new IndoorTestView(new IndoorTestTrainer());
+    view.configurePhases();
+    view.onLayout(dc);
+    view.onUpdate(dc);
+    view.onTimerStart();
+    view.handleTouch(100, 200);
+    view.handleTouch(200, 370);
+    view.onUpdate(dc);
+    var info = new Activity.Info();
+    info.timerState = Activity.TIMER_STATE_ON;
+    // Render every timed phase, then completion.
+    var times = [5000, 15000, 19000, 22000, 27000];
+    for (var i = 0; i < times.size(); i += 1) {
+        info.timerTime = times[i];
+        view.compute(info);
+        view.onUpdate(dc);
+    }
+    return (view.phase() == INTERVAL_PHASE_COMPLETE) && (view.intensity() == 101);
 }
