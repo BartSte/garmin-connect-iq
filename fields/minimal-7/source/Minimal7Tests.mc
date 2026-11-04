@@ -1,6 +1,32 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Test;
+import Toybox.Application;
+import Toybox.WatchUi;
+
+(:test)
+function minimal7SettingsMenuReadsStoredValues(logger as Test.Logger) as Lang.Boolean {
+    logger.debug("Checking native menu labels for stored and invalid durations");
+    var originalSeconds = Application.Properties.getValue("extra_power_seconds");
+    var originalFtp = Application.Properties.getValue("ftp");
+    Application.Properties.setValue("ftp", 300);
+    var choices = [0, 10, 20, 30, 60, 15];
+    var labels = ["Off", "10s", "20s", "30s", "60s", "Off"];
+    var passed = true;
+    for (var i = 0; i < choices.size(); i += 1) {
+        Application.Properties.setValue("extra_power_seconds", choices[i]);
+        var menu = new Minimal7SettingsView();
+        var ftpItem = menu.getItem(0) as WatchUi.MenuItem;
+        var extraItem = menu.getItem(1) as WatchUi.MenuItem;
+        passed = passed && ftpItem.getId() == :ftp
+            && (ftpItem.getSubLabel() as String).equals("300 W")
+            && extraItem.getId() == :extra_power_seconds
+            && (extraItem.getSubLabel() as String).equals(labels[i]);
+    }
+    Application.Properties.setValue("extra_power_seconds", originalSeconds);
+    Application.Properties.setValue("ftp", originalFtp);
+    return passed;
+}
 
 (:test)
 function minimal7ExtraPowerSettingsRejectInvalidValues(logger as Test.Logger) as Lang.Boolean {
@@ -66,8 +92,8 @@ function minimal7ExtraPowerPickerMapsChoices(logger as Test.Logger) as Lang.Bool
             return false;
         }
     }
-    return Minimal7ExtraPowerPickerFactory.formatValue(0) == "Off"
-        && Minimal7ExtraPowerPickerFactory.formatValue(30) == "30s";
+    return Minimal7ExtraPowerPickerFactory.formatValue(0).equals("Off")
+        && Minimal7ExtraPowerPickerFactory.formatValue(30).equals("30s");
 }
 
 (:test)
