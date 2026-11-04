@@ -6,6 +6,7 @@ import Toybox.Test;
 class IndoorTestTrainer extends IndoorTrainerController {
     var ready as Boolean = true;
     var controlAllowed as Boolean = false;
+    var target as Number or Null = null;
 
     function initialize() {
         IndoorTrainerController.initialize();
@@ -15,12 +16,15 @@ class IndoorTestTrainer extends IndoorTrainerController {
         return ready;
     }
 
-    function update(settings as Dictionary, phase as Number, allowed as Boolean, forceTarget as Boolean) as Void {
+    function update(settings as Dictionary, phase as Number, allowed as Boolean, forceTarget as Boolean, intensity as Number) as Void {
         controlAllowed = allowed;
+        var base = IntervalWorkoutLogic.controlledPowerForPhase(settings, phase);
+        target = (allowed && (base != null)) ? IntervalWorkoutLogic.scaledPower(base as Number, intensity) : null;
     }
 
     function release() as Void {
         controlAllowed = false;
+        target = null;
     }
 }
 
@@ -37,6 +41,25 @@ class IndoorTestView extends IntervalWorkout {
 
     function phase() as Number {
         return mState[:phase];
+    }
+
+    function configurePhases() as Void {
+        mSettings[:setCount] = 1;
+        mSettings[:repCount] = 1;
+        mSettings[:workSecs] = 4;
+        mSettings[:recoverySecs] = 3;
+        mSettings[:warmupSecs] = 10;
+        mSettings[:cooldownSecs] = 5;
+        mFieldWidth = 240;
+        mFieldHeight = 400;
+    }
+
+    function intensity() as Number {
+        return mIntensity;
+    }
+
+    function targetPower() as Number or Null {
+        return currentTargetPower();
     }
 
     hidden function emitAlertForPhase(phase as Number) as Void {
@@ -116,4 +139,63 @@ function indoorWorkoutDoesNotReenableControlAfterStop(logger as Test.Logger) as 
     info.timerState = Activity.TIMER_STATE_PAUSED;
     view.compute(info);
     return trainer.controlAllowed;
+}
+
+(:test)
+function indoorWorkoutAdjustsEveryPhaseByOnePercent(logger as Test.Logger) as Boolean {
+    var trainer = new IndoorTestTrainer();
+    var view = new IndoorTestView(trainer);
+    view.configurePhases();
+    view.onTimerStart();
+    // The footer cannot start a workout.
+    view.handleTouch(200, 370);
+    if ((view.phase() != INTERVAL_PHASE_READY) || (view.intensity() != 100)) { return false; }
+    view.handleTouch(100, 200);
+    view.handleTouch(200, 370);
+    // Plus and the percentage display cannot cancel the countdown.
+    view.handleTouch(120, 370);
+    if ((view.phase() != INTERVAL_PHASE_STARTING) || (view.intensity() != 101)) { return false; }
+    var info = new Activity.Info();
+    info.timerState = Activity.TIMER_STATE_ON;
+    info.timerTime = 5000;
+    view.compute(info);
+    if ((view.phase() != INTERVAL_PHASE_WARMUP) || (trainer.target != 126) || (view.targetPower() != 126)) { return false; }
+    view.handleTouch(200, 370);
+    if ((view.intensity() != 102) || (trainer.target != 128)) { return false; }
+    info.timerTime = 15000;
+    view.compute(info);
+    if ((view.phase() != INTERVAL_PHASE_WORK) || (trainer.target != 286)) { return false; }
+    view.handleTouch(20, 370);
+    if ((view.intensity() != 101) || (trainer.target != 283)) { return false; }
+    // A manual Stop releases control even if the user continues to adjust.
+    view.onTimerStop();
+    view.handleTouch(200, 370);
+    if (trainer.controlAllowed || (trainer.target != null)) { return false; }
+    view.onTimerStart();
+    info.timerTime = 19000;
+    view.compute(info);
+    if ((view.phase() != INTERVAL_PHASE_RECOVERY) || (trainer.target != 128)) { return false; }
+    info.timerTime = 22000;
+    view.compute(info);
+    if ((view.phase() != INTERVAL_PHASE_COOLDOWN) || (trainer.target != 128)) { return false; }
+    view.handleTouch(20, 370);
+    if (trainer.target != 126) { return false; }
+    info.timerTime = 27000;
+    view.compute(info);
+    if ((view.phase() != INTERVAL_PHASE_COMPLETE) || (trainer.target != null)) { return false; }
+    view.handleTouch(200, 370);
+    if (view.intensity() != 101) { return false; }
+    view.onTimerReset();
+    return view.intensity() == 100;
+}
+
+(:test)
+function indoorWorkoutCancelResetsIntensity(logger as Test.Logger) as Boolean {
+    var view = new IndoorTestView(new IndoorTestTrainer());
+    view.configurePhases();
+    view.onTimerStart();
+    view.handleTouch(100, 200);
+    view.handleTouch(200, 370);
+    view.handleTouch(100, 200);
+    return (view.phase() == INTERVAL_PHASE_READY) && (view.intensity() == 100);
 }

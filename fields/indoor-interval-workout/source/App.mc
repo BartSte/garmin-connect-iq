@@ -51,6 +51,7 @@ class IntervalWorkoutInputDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onTap(evt as WatchUi.ClickEvent) as Boolean {
-        return mView.handleTap();
+        var coordinates = evt.getCoordinates();
+        return mView.handleTouch(coordinates[0], coordinates[1]);
     }
 }

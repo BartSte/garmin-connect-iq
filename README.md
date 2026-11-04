@@ -180,8 +180,8 @@ alternative.
 ## Indoor interval workout field
 
 `fields/indoor-interval-workout` is a separate field for indoor ERG workouts.
-It keeps the schedule, touchscreen controls, alerts, and layout from the
-outdoor interval field.
+It adds trainer control, optional warm-up and cool-down phases, and live
+intensity controls to the interval schedule.
 
 Start the activity timer with the Edge Start/Stop button. The field shows
 `START TIMER` until the timer runs. Then tap the field at `TAP` to start the
@@ -203,13 +203,28 @@ The sequence is countdown, warm-up, intervals, final repetition recovery,
 cool-down, then `DONE`. The field shows `WARM-UP` or `COOL-DOWN` during those
 phases. Settings changes during a workout apply after the activity resets.
 
+The bottom row contains `−`, the current intensity percentage, and `+`.
+Each workout starts at 100%. During the countdown or a workout phase, each
+tap on `−` or `+` changes intensity by **1 percentage point**. The range is
+1% through 200%. These controls cannot start or cancel the countdown.
+A tap in the main field starts or cancels the countdown as before.
+
+An intensity change immediately adjusts the current trainer target. The same
+percentage applies to all subsequent targets, including warm-up and cool-down.
+The field rounds each target to the nearest watt and limits it to 4000 W.
+For example, 280 W becomes 283 W at 101%. The power badge and transition alerts
+show the adjusted target. The saved power settings do not change.
+
 After each update, the field sends no more than one trainer command. If the
 update crosses multiple phases, it sends the target for the final current
 phase. The field sends the current target again after the trainer reconnects.
 
-A timer pause keeps the current target. Cancellation, completion, timer stop,
-timer reset, and application shutdown release trainer control. The preferred
-release mode is 0% basic resistance. The fallback target is 0 W.
+Auto-Pause freezes the countdown and keeps the current target. Intensity
+controls can still adjust that target. A manual timer stop releases trainer
+control. Intensity changes during a manual stop apply when the timer resumes.
+Cancellation, completion after cool-down, timer reset, and application shutdown
+also release trainer control. The preferred release mode is 0% basic resistance.
+The fallback target is 0 W. Cancellation and timer reset restore 100% intensity.
 
 ### Indoor workout settings
 

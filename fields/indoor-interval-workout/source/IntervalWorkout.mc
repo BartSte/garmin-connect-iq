@@ -5,8 +5,8 @@ import Toybox.Lang;
 import Toybox.System;
 import Toybox.WatchUi;
 
-const TOP_ROW_HEIGHT_PCT = 20;
-const POWER_ROW_HEIGHT_PCT = 40;
+const TOP_ROW_HEIGHT_PCT = 15;
+const POWER_ROW_HEIGHT_PCT = 35;
 const BORDER_PADDING = 4;
 const TEXT_PADDING = 6;
 
@@ -47,6 +47,9 @@ class IntervalWorkout extends WatchUi.DataField {
     hidden var mPendingSettingsDirty as Boolean = false;
     hidden var mTrainerControlAllowed as Boolean = false;
     hidden var mTrainerBlocked as Boolean = false;
+    hidden var mIntensity as Number = INTERVAL_DEFAULT_INTENSITY;
+    hidden var mFieldWidth as Number = 0;
+    hidden var mFieldHeight as Number = 0;
     hidden var mTrainer as IndoorTrainerController = new IndoorTrainerController();
 
     hidden var mPowerBuf as Array<Number> = [0, 0, 0];
@@ -90,6 +93,7 @@ class IntervalWorkout extends WatchUi.DataField {
         mSessionLocked = result[:sessionLocked];
 
         if (result[:started]) {
+            mIntensity = INTERVAL_DEFAULT_INTENSITY;
             mTrainerBlocked = false;
             mLastTimerMs = mTimerMs;
         } else if (result[:cancelled]) {
@@ -105,6 +109,27 @@ class IntervalWorkout extends WatchUi.DataField {
     }
 
     function onLayout(dc as Graphics.Dc) as Void {
+        mFieldWidth = dc.getWidth();
+        mFieldHeight = dc.getHeight();
+    }
+
+    function handleTouch(x as Number, y as Number) as Boolean {
+        var action = IntervalWorkoutLogic.touchAction(x, y, mFieldWidth, mFieldHeight);
+        if (action == INTERVAL_TOUCH_BODY) {
+            return handleTap();
+        }
+        if (IntervalWorkoutLogic.isTimedPhase(mState[:phase])) {
+            var delta = 0;
+            if (action == INTERVAL_TOUCH_DECREASE) { delta = -1; }
+            if (action == INTERVAL_TOUCH_INCREASE) { delta = 1; }
+            if (delta != 0) {
+                mIntensity = IntervalWorkoutLogic.adjustedIntensity(mIntensity, delta);
+                // Apply the target immediately, including while auto-paused.
+                mTrainer.update(mSettings, mState[:phase], mTrainerControlAllowed, false, mIntensity);
+                WatchUi.requestUpdate();
+            }
+        }
+        return true;
     }
 
     function onTimerReset() as Void {
@@ -114,6 +139,7 @@ class IntervalWorkout extends WatchUi.DataField {
         mLastTimerMs = 0;
         mTimerRunning = false;
         mTrainerBlocked = false;
+        mIntensity = INTERVAL_DEFAULT_INTENSITY;
         mSessionLocked = false;
         mSettingsDirty = true;
         mPendingSettingsDirty = false;
@@ -201,17 +227,21 @@ class IntervalWorkout extends WatchUi.DataField {
             mSettings,
             mState[:phase],
             mTrainerControlAllowed,
-            forceTrainerTarget
+            forceTrainerTarget,
+            mIntensity
         );
     }
 
     function onUpdate(dc as Graphics.Dc) as Void {
         var w = dc.getWidth();
         var h = dc.getHeight();
+        mFieldWidth = w;
+        mFieldHeight = h;
         var row1H = (h * TOP_ROW_HEIGHT_PCT) / 100;
         var row2H = (h * POWER_ROW_HEIGHT_PCT) / 100;
-        var row3H = (h - row1H - row2H) / 2;
-        var row4H = h - row1H - row2H - row3H;
+        var row3H = (h * 20) / 100;
+        var controlsY = (h * INTERVAL_CONTROLS_TOP_PCT) / 100;
+        var row4H = controlsY - row1H - row2H - row3H;
 
         var row1Y = 0;
         var row2Y = row1H;
@@ -243,7 +273,8 @@ class IntervalWorkout extends WatchUi.DataField {
         );
         drawStatusRow(dc, 0, row3Y, w, row3H, fg, intervalTimeText(), targetPower);
         drawRow(dc, 0, row4Y, w, row4H, fg, null, setProgressText(), repProgressText());
-        drawBorders(dc, w, h, row1H, row2Y + row2H, row4Y, fg);
+        drawBorders(dc, w, controlsY, row1H, row2Y + row2H, row4Y, fg);
+        drawIntensityControls(dc, w, controlsY, h - controlsY, fg);
     }
 
     hidden function maybeReloadSettings() as Void {
@@ -264,6 +295,7 @@ class IntervalWorkout extends WatchUi.DataField {
     }
 
     hidden function finishCancellation() as Void {
+        mIntensity = INTERVAL_DEFAULT_INTENSITY;
         if (mPendingSettingsDirty) {
             mSettingsDirty = true;
         }
@@ -313,7 +345,8 @@ class IntervalWorkout extends WatchUi.DataField {
         if (!mSettings[:valid]) {
             return null;
         }
-        return IntervalWorkoutLogic.targetPowerForPhase(mSettings, mState[:phase]);
+        var target = IntervalWorkoutLogic.targetPowerForPhase(mSettings, mState[:phase]);
+        return target == null ? null : IntervalWorkoutLogic.scaledPower(target as Number, mIntensity);
     }
 
     hidden function setProgressText() as String {
@@ -346,15 +379,15 @@ class IntervalWorkout extends WatchUi.DataField {
 
         var text = "";
         if (phase == INTERVAL_PHASE_WARMUP) {
-            text = "WARM-UP " + targetPowerText(mSettings[:warmupPower]);
+            text = "WARM-UP " + adjustedPowerText(mSettings[:warmupPower]);
         } else if (phase == INTERVAL_PHASE_COOLDOWN) {
-            text = "COOL-DOWN " + targetPowerText(mSettings[:cooldownPower]);
+            text = "COOL-DOWN " + adjustedPowerText(mSettings[:cooldownPower]);
         } else if (phase == INTERVAL_PHASE_WORK) {
-            text = "WORK " + targetPowerText(mSettings[:workPower]);
+            text = "WORK " + adjustedPowerText(mSettings[:workPower]);
         } else if (phase == INTERVAL_PHASE_RECOVERY) {
-            text = "RECOVERY " + targetPowerText(mSettings[:recoveryPower]);
+            text = "RECOVERY " + adjustedPowerText(mSettings[:recoveryPower]);
         } else if (phase == INTERVAL_PHASE_SET_RECOVERY) {
-            text = "SET REC " + targetPowerText(mSettings[:setRecoveryPower]);
+            text = "SET REC " + adjustedPowerText(mSettings[:setRecoveryPower]);
         } else if (phase == INTERVAL_PHASE_COMPLETE) {
             text = "COMPLETE";
         }
@@ -386,6 +419,26 @@ class IntervalWorkout extends WatchUi.DataField {
 
     hidden function targetPowerText(power as Number) as String {
         return power.format("%d") + " W";
+    }
+
+    hidden function adjustedPowerText(power as Number) as String {
+        return targetPowerText(IntervalWorkoutLogic.scaledPower(power, mIntensity));
+    }
+
+    hidden function drawIntensityControls(dc as Graphics.Dc, w as Number, y as Number, h as Number, fg as Number) as Void {
+        var third = w / 3;
+        var rightX = (w * 2) / 3;
+        var buttonColor = IntervalWorkoutLogic.isTimedPhase(mState[:phase]) ? fg : Graphics.COLOR_DK_GRAY;
+        drawCell(dc, 0, y, third, h, buttonColor, null, "-", standardFonts());
+        drawCell(dc, third, y, rightX - third, h, fg, null, mIntensity.format("%d") + "%", standardFonts());
+        drawCell(dc, rightX, y, w - rightX, h, buttonColor, null, "+", standardFonts());
+        dc.setColor(fg, Graphics.COLOR_TRANSPARENT);
+        dc.drawLine(0, y, w - 1, y);
+        dc.drawLine(0, y, 0, y + h - 1);
+        dc.drawLine(w - 1, y, w - 1, y + h - 1);
+        dc.drawLine(0, y + h - 1, w - 1, y + h - 1);
+        dc.drawLine(third, y, third, y + h - 1);
+        dc.drawLine(rightX, y, rightX, y + h - 1);
     }
 
     hidden function drawPowerRow(

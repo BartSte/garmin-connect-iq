@@ -39,7 +39,8 @@ class IndoorTrainerController {
         settings as Dictionary,
         phase as Number,
         controlAllowed as Boolean,
-        forceTarget as Boolean
+        forceTarget as Boolean,
+        intensity as Number
     ) as Void {
         var target = IntervalWorkoutLogic.controlledPowerForPhase(settings, phase);
         if (!controlAllowed || (target == null)) {
@@ -67,7 +68,7 @@ class IndoorTrainerController {
             return;
         }
 
-        var targetPower = target as Number;
+        var targetPower = IntervalWorkoutLogic.scaledPower(target as Number, intensity);
         var targetChanged = (mLastTarget == null) || ((mLastTarget as Number) != targetPower);
         var phaseChanged = mLastPhase != phase;
         if (!forceTarget && mControlsTrainer && mWasTracking && !targetChanged && !phaseChanged) {

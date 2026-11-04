@@ -5,6 +5,9 @@
 ### Unreleased
 
 - Added optional warm-up and cool-down phases with separate duration and power settings.
+- Added touch controls that change workout intensity by 1 percentage point per tap.
+- Applied intensity to the current target and all subsequent targets without changes to the saved settings.
+- Added a bottom row with intensity controls and the current percentage.
 - Added visible timer and trainer status messages for blocked workout starts.
 - Prevented a final timer update after Stop from re-enabling trainer control.
 

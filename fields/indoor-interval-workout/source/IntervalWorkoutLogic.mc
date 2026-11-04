@@ -11,6 +11,15 @@ const INTERVAL_PHASE_COMPLETE     = 6;
 const INTERVAL_PHASE_WARMUP       = 7;
 const INTERVAL_PHASE_COOLDOWN     = 8;
 
+const INTERVAL_MIN_INTENSITY = 1;
+const INTERVAL_MAX_INTENSITY = 200;
+const INTERVAL_DEFAULT_INTENSITY = 100;
+const INTERVAL_CONTROLS_TOP_PCT = 85;
+const INTERVAL_TOUCH_NONE = 0;
+const INTERVAL_TOUCH_BODY = 1;
+const INTERVAL_TOUCH_DECREASE = 2;
+const INTERVAL_TOUCH_INCREASE = 3;
+
 const INTERVAL_START_COUNTDOWN_MS = 5000;
 
 const INTERVAL_DEFAULT_FTP = 248;
@@ -386,6 +395,31 @@ module IntervalWorkoutLogic {
             return targetPowerForPhase(settings, phase);
         }
         return null;
+    }
+
+    function adjustedIntensity(percent as Number, delta as Number) as Number {
+        var next = percent + delta;
+        if (next < INTERVAL_MIN_INTENSITY) { return INTERVAL_MIN_INTENSITY; }
+        if (next > INTERVAL_MAX_INTENSITY) { return INTERVAL_MAX_INTENSITY; }
+        return next;
+    }
+
+    function scaledPower(power as Number, intensity as Number) as Number {
+        // Round from the saved target each time to avoid cumulative rounding.
+        var scaled = (power * intensity + 50) / 100;
+        return scaled > INTERVAL_MAX_TARGET_POWER ? INTERVAL_MAX_TARGET_POWER : scaled;
+    }
+
+    function touchAction(x as Number, y as Number, width as Number, height as Number) as Number {
+        if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
+            return INTERVAL_TOUCH_NONE;
+        }
+        if (y < (height * INTERVAL_CONTROLS_TOP_PCT) / 100) {
+            return INTERVAL_TOUCH_BODY;
+        }
+        if (x < width / 3) { return INTERVAL_TOUCH_DECREASE; }
+        if (x >= (width * 2) / 3) { return INTERVAL_TOUCH_INCREASE; }
+        return INTERVAL_TOUCH_NONE;
     }
 
     function trainerCanStart(tracking as Boolean, targetPowerSupported as Boolean or Null) as Boolean {
