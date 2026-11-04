@@ -48,6 +48,13 @@
 
 ## Minimal-7
 
+### v1.4.0
+
+- Added an optional extra power average with Off, 10s, 20s, 30s, and 60s choices.
+- Kept the seven-value layout by default. Enabling the extra average splits the power row, with the extra average on the left.
+- Applied the existing FTP-zone background and text colors independently to both power values, without labels.
+- Added an on-device settings menu for FTP and the extra average. Existing settings and the application identity stay the same.
+
 ### v1.2.0
 
 - Numeric fields now use the largest built-in number font that fits their current value while keeping a small cell margin.

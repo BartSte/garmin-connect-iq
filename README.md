@@ -21,7 +21,7 @@ Each subdirectory under `fields/` is a self-contained Connect IQ project that ca
 
 | Folder             | Description                                                                                                               |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `minimal-7`        | Full-screen field: time, timer, 3s power (zone color), speed, cadence, ascent, distance                                   |
+| `minimal-7`        | Full-screen field: time, timer, 3s power (zone color), speed, cadence, ascent, distance, and an optional extra power average |
 | `interval-workout` | Full-screen interval-training field: touch start, zone-colored 3s power, requested zone, countdown, and set/rep progress |
 | `example-field`    | Starter template – displays current speed in km/h                                                                         |
 
@@ -176,9 +176,9 @@ the sideloaded `.prg` so the new build continues to use the existing property
 storage. Existing phone/Store-style XML settings remain supported as an
 alternative.
 
-## Minimal-7 FTP setting
+## Minimal-7 settings
 
-Minimal-7 exposes its FTP setting directly on the Edge Explore 2. This works for
+Minimal-7 exposes FTP and an optional extra power average directly on the Edge Explore 2. This works for
 the manually sideloaded build and does not require the Connect IQ Store, Garmin
 Connect, or Garmin Express.
 
@@ -186,13 +186,35 @@ Connect, or Garmin Express.
 2. Connect the Edge over USB and copy the `.prg` to `Garmin/Apps/`.
 3. Disconnect the Edge and open the Connect IQ data-field settings for Minimal-7
    from the activity profile.
-4. Tap the FTP screen, scroll to a value from 50 W through 600 W, and accept it.
+4. Select **FTP (W)**, choose a value from 50 W through 600 W, and accept it.
+5. To show an eighth value, select **Extra power average** and choose **10s**, **20s**, **30s**, or **60s**.
+6. To restore the seven-value layout, set **Extra power average** to **Off** (the default).
 
-The accepted FTP is stored in the app's local properties and remains available
-after the Edge restarts. Further FTP changes happen entirely on the Edge; they do
+The accepted settings persist after the Edge restarts. Canceling a picker preserves its previous value.
+Further changes happen entirely on the Edge; they do
 not require another build, phone synchronization, or USB connection. Keep the
 application UUID in `fields/minimal-7/manifest.xml` unchanged when rebuilding so
 the new `.prg` uses the same property storage.
+
+With the extra average off, the 3s power value fills the second row. With it enabled,
+the extra average appears on the left and 3s power appears on the right:
+
+```text
+| Time        | Timer    |
+| Extra power | 3s power |
+| Speed       | Cadence  |
+| Ascent      | Distance |
+```
+
+The diagram uses labels for explanation. The field itself shows numbers only.
+Both power values use the same FTP-zone background and text colors, each based on its own average.
+The row heights stay the same in both layouts.
+
+The extra average uses the most recent power samples, approximately one per second.
+During warm-up, it averages only the samples received so far. Zero power counts in the average.
+Unavailable power counts as zero, as in the existing 3s average.
+Changing the extra duration starts a new window. FTP changes preserve the current window.
+The existing 3s calculation stays the same. Existing installations keep the seven-value layout until the extra average is enabled.
 
 ### Build a field
 

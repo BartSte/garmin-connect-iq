@@ -19,6 +19,15 @@ const MINIMAL7_CADENCE_TARGET_COLOR = 0x00AA00;
 
 module Minimal7Logic {
 
+    function extraPowerSeconds(value as Object or Null) as Number {
+        if (value instanceof Number) {
+            if (value == 10 || value == 20 || value == 30 || value == 60) {
+                return value;
+            }
+        }
+        return 0;
+    }
+
     function valueToNumber(value as Lang.Object or Null, fallback as Number) as Number {
         if (value == null) {
             return fallback;

@@ -3,6 +3,16 @@
         <settingConfig type="numeric" />
     </setting>
 
+    <setting propertyKey="@Properties.extra_power_seconds" title="@Strings.ExtraPowerTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.OffOption</listEntry>
+            <listEntry value="10">10s</listEntry>
+            <listEntry value="20">20s</listEntry>
+            <listEntry value="30">30s</listEntry>
+            <listEntry value="60">60s</listEntry>
+        </settingConfig>
+    </setting>
+
     <setting propertyKey="@Properties.cadence_min" title="@Strings.CadenceMinTitle">
         <settingConfig type="numeric" />
     </setting>

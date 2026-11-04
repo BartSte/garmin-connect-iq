@@ -3,6 +3,74 @@ import Toybox.Lang;
 import Toybox.Test;
 
 (:test)
+function minimal7ExtraPowerSettingsRejectInvalidValues(logger as Test.Logger) as Lang.Boolean {
+    logger.debug("Checking extra power settings and upgrade default");
+    return Minimal7Logic.extraPowerSeconds(null) == 0
+        && Minimal7Logic.extraPowerSeconds(0) == 0
+        && Minimal7Logic.extraPowerSeconds(-10) == 0
+        && Minimal7Logic.extraPowerSeconds(15) == 0
+        && Minimal7Logic.extraPowerSeconds("30") == 0
+        && Minimal7Logic.extraPowerSeconds(10) == 10
+        && Minimal7Logic.extraPowerSeconds(20) == 20
+        && Minimal7Logic.extraPowerSeconds(30) == 30
+        && Minimal7Logic.extraPowerSeconds(60) == 60;
+}
+
+(:test)
+function minimal7ExtraPowerAverageWarmsUp(logger as Test.Logger) as Lang.Boolean {
+    logger.debug("Checking warm-up without synthetic historical samples");
+    var average = new Minimal7PowerAverage(30);
+    return average.push(210) == 210
+        && average.push(240) == 225
+        && average.push(300) == 250
+        && average.push(0) == 188;
+}
+
+(:test)
+function minimal7ExtraPowerAverageRollsAllWindows(logger as Test.Logger) as Lang.Boolean {
+    logger.debug("Checking all windows over multiple buffer wraps, including zero power");
+    var windows = [10, 20, 30, 60];
+    for (var w = 0; w < windows.size(); w += 1) {
+        var seconds = windows[w];
+        var average = new Minimal7PowerAverage(seconds);
+        for (var i = 0; i < seconds; i += 1) {
+            if (average.push(300) != 300) {
+                return false;
+            }
+        }
+        for (var j = 1; j <= seconds; j += 1) {
+            if (average.push(0) != ((seconds - j) * 300 + seconds / 2) / seconds) {
+                return false;
+            }
+        }
+        for (var k = 0; k < seconds; k += 1) {
+            average.push(240);
+        }
+        if (average.push(240) != 240) {
+            return false;
+        }
+    }
+    return true;
+}
+
+(:test)
+function minimal7ExtraPowerPickerMapsChoices(logger as Test.Logger) as Lang.Boolean {
+    logger.debug("Checking extra power picker choices and fallback");
+    var factory = new Minimal7ExtraPowerPickerFactory();
+    var values = [0, 10, 20, 30, 60];
+    if (factory.getSize() != values.size() || factory.getIndex(15) != 0) {
+        return false;
+    }
+    for (var i = 0; i < values.size(); i += 1) {
+        if (factory.getIndex(values[i]) != i || factory.getValue(i) != values[i]) {
+            return false;
+        }
+    }
+    return Minimal7ExtraPowerPickerFactory.formatValue(0) == "Off"
+        && Minimal7ExtraPowerPickerFactory.formatValue(30) == "30s";
+}
+
+(:test)
 function minimal7FormatsShortTimer(logger as Test.Logger) as Lang.Boolean {
     logger.debug("Formatting sub-hour timer");
     return Minimal7Logic.formatTimer(125000).equals("2:05");
