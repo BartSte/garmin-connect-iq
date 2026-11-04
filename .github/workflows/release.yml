@@ -50,8 +50,9 @@ jobs:
       # ── Download the Connect IQ SDK ───────────────────────────────────
       - name: Install Connect IQ SDK
         run: |
-          connect-iq-sdk-manager sdk download ">=8.4.0"
-          connect-iq-sdk-manager sdk set ">=8.4.0"
+          SDK_VERSION=$(cat .ciq-sdk-version)
+          connect-iq-sdk-manager sdk download "$SDK_VERSION"
+          connect-iq-sdk-manager sdk set "$SDK_VERSION"
           echo "$(connect-iq-sdk-manager sdk current-path --bin)" >> "$GITHUB_PATH"
 
       # ── Login to Garmin and download per-device definition files ────────

@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-SDK_VERSION="${SDK_VERSION:->=8.4.0}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SDK_VERSION="${SDK_VERSION:-$(cat "$PROJECT_ROOT/.ciq-sdk-version")}"
 FORCE_MANAGER_INSTALL="${FORCE_MANAGER_INSTALL:-0}"
 
 log() {
@@ -58,7 +58,7 @@ install_system_packages() {
     ca-certificates \
     curl \
     git \
-    jre-openjdk-headless \
+    jre-openjdk \
     openssl \
     unzip
 }

@@ -32,6 +32,62 @@ Each subdirectory under `fields/` is a self-contained Connect IQ project that ca
 3. Build with `monkeyc` or use the IDE's **Run** action against the Edge Explore 2 simulator.
 4. For these private fields, copy the generated `.prg` to `Garmin/Apps/` on the Edge over USB.
 
+### Development on Arch Linux and WSL
+
+The simulator runs in an Ubuntu 22.04 container. This container supplies the
+WebKitGTK 4.0 libraries and full Java runtime required by the SDK.
+The SDK, Edge Explore 2 definitions, fonts, and signing key must exist on the host.
+The required SDK version is in `.ciq-sdk-version`.
+
+Build the container image after changes to `scripts/Dockerfile.simulator`:
+
+```bash
+./scripts/dev.sh image
+```
+
+Run all unit tests on the Edge Explore 2 simulator:
+
+```bash
+./scripts/dev.sh test
+```
+
+This command starts a separate simulator with a virtual display. It waits for
+the simulator, runs the tests, and removes the container afterward.
+Each field has a 120-second timeout for test execution. Set `TEST_TIMEOUT` when
+using `scripts/test-fields.sh` directly to change this limit.
+
+Open the visible simulator:
+
+```bash
+./scripts/dev.sh simulator
+```
+
+In another terminal, compile and load a field:
+
+```bash
+./scripts/dev.sh run minimal-7
+# Or:
+./scripts/dev.sh run interval-workout
+```
+
+Create a release build for installation on the Edge:
+
+```bash
+./scripts/dev.sh build minimal-7
+```
+
+The output is `fields/minimal-7/bin/minimal-7-edgeexplore2.prg`.
+Copy this file to `Garmin/Apps/` on the connected Edge. Then disconnect the Edge
+and select the data field in the activity profile.
+
+The script uses Docker directly when socket access is available. In WSL, it can
+also use `wsl.exe` to run Docker as root in the current distribution.
+The application inside the container runs with your user ID.
+Do not mount the host `/etc/passwd` or `/etc/group` into the container.
+
+The visible simulator needs WSLg or another X11 display. The test command uses
+Xvfb and does not need a visible display.
+
 ### Linux setup
 
 This repo includes bootstrap scripts for the two Linux distros requested here:
@@ -50,7 +106,7 @@ What the scripts do:
 - install [`connect-iq-sdk-manager`](https://github.com/lindell/connect-iq-sdk-manager-cli)
 - add both `~/.local/bin` and the active Connect IQ SDK `bin` directory to your shell startup files
 - accept the Garmin SDK agreement interactively
-- download and activate Connect IQ SDK `>=8.4.0`
+- download and activate the Connect IQ SDK version in `.ciq-sdk-version`
 - download device definitions and simulator fonts for every `fields/*/manifest.xml` in this repo
 
 The scripts assume:
@@ -242,11 +298,12 @@ git push origin fields/<field-name>/v1.0.0
 ```
 
 The CI workflow (`.github/workflows/release.yml`) picks up the tag, compiles the field
-with `monkeyc`, and publishes the `.iq` file as a GitHub release.
+with `monkeyc`, and publishes the device-specific `.prg` files as a GitHub release.
 
 **Required setup (once):**
 
-- `CIQ_SDK_URL` — repository variable pointing to the Linux Connect IQ SDK zip.
+- `CONNECT_IQ_AGREEMENT_HASH` — repository variable with the accepted Garmin agreement hash.
+- `GARMIN_USERNAME` and `GARMIN_PASSWORD` — repository secrets for device downloads.
 - `CIQ_DEVELOPER_KEY` — repository secret containing `base64 developer_key.der`.
 
 See the workflow file for key generation instructions.
@@ -254,6 +311,11 @@ See the workflow file for key generation instructions.
 ## Testing
 
 Garmin's official Connect IQ unit-test framework is `Toybox.Test`, and it runs in the simulator.
+
+For the complete container workflow, use `./scripts/dev.sh test`.
+The `test.yml` workflow runs the same command on branch pushes and pull requests
+from this repository. Fork pull requests cannot use the Garmin account secrets.
+CI generates a temporary signing key for tests.
 
 This repo now keeps testable logic in helper modules and places unit tests directly in each field project:
 

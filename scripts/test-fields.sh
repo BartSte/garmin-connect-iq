@@ -34,7 +34,18 @@ compile_tests() {
 
   if [[ "$RUN_SIM_TESTS" == "1" ]]; then
     printf '[test-fields] running %s tests in simulator\n' "$field_name"
-    monkeydo "$output_prg" "$DEVICE_ID" -t
+    local test_log result=0
+    test_log="$(mktemp)"
+    timeout "${TEST_TIMEOUT:-120}" monkeydo "$output_prg" "$DEVICE_ID" -t \
+      2>&1 | tee "$test_log" || result=$?
+    # Some SDK versions return 1 even when every test passes.
+    # Require a complete successful summary and reject timeouts or crashes.
+    if [[ "$result" -gt 1 ]] || ! grep -Eq '^PASSED \(passed=[1-9][0-9]*, failed=0, errors=0\)' "$test_log"; then
+      rm -f "$test_log"
+      printf '[test-fields] %s tests failed or did not complete (exit %s).\n' "$field_name" "$result" >&2
+      exit 1
+    fi
+    rm -f "$test_log"
   fi
 }
 
@@ -42,16 +53,17 @@ main() {
   require_cmd monkeyc
   if [[ "$RUN_SIM_TESTS" == "1" ]]; then
     require_cmd monkeydo
+    require_cmd timeout
   fi
   if [[ ! -f "$DEVELOPER_KEY" ]]; then
     printf 'Missing developer key: %s\n' "$DEVELOPER_KEY" >&2
     exit 1
   fi
 
-  local field_dir
-  while IFS= read -r field_dir; do
-    compile_tests "$field_dir"
-  done < <(find "$PROJECT_ROOT/fields" -mindepth 1 -maxdepth 1 -type d | sort)
+  local jungle_file
+  while IFS= read -r jungle_file; do
+    compile_tests "$(dirname "$jungle_file")"
+  done < <(find "$PROJECT_ROOT/fields" -mindepth 2 -maxdepth 2 -name monkey.jungle -type f | sort)
 }
 
 main "$@"

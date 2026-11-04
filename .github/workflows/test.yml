@@ -1,0 +1,53 @@
+name: Test data fields
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # Garmin device downloads need account secrets, unavailable to fork PRs.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SDK manager
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/lindell/connect-iq-sdk-manager-cli/master/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install pinned SDK
+        run: |
+          connect-iq-sdk-manager agreement accept \
+            --agreement-hash "${{ vars.CONNECT_IQ_AGREEMENT_HASH }}"
+          SDK_VERSION=$(cat .ciq-sdk-version)
+          connect-iq-sdk-manager sdk download "$SDK_VERSION"
+          connect-iq-sdk-manager sdk set "$SDK_VERSION"
+
+      - name: Download Edge Explore 2 definitions and fonts
+        env:
+          GARMIN_USERNAME: ${{ secrets.GARMIN_USERNAME }}
+          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+        run: |
+          connect-iq-sdk-manager login
+          connect-iq-sdk-manager device download \
+            --manifest fields/example-field/manifest.xml --include-fonts
+
+      - name: Generate temporary test signing key
+        run: |
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out /tmp/ciq-test-key.pem
+          openssl pkcs8 -topk8 -inform PEM -outform DER \
+            -in /tmp/ciq-test-key.pem -out developer_key.der -nocrypt
+
+      - name: Build simulator image
+        run: ./scripts/dev.sh image
+
+      - name: Run tests on Edge Explore 2
+        run: ./scripts/dev.sh test

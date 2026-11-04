@@ -1,0 +1,31 @@
+FROM ubuntu:22.04
+
+# Reuse the host SDK and device assets through bind mounts at runtime.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ca-certificates \
+        dbus-x11 \
+        default-jre \
+        libsecret-1-0 \
+        libusb-1.0-0 \
+        libwebkit2gtk-4.0-37 \
+        libxext6 \
+        libxft2 \
+        libxinerama1 \
+        libxxf86vm1 \
+        xauth \
+        xvfb \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG DEV_UID=1000
+ARG DEV_GID=1000
+ARG DEV_HOME=/home/ciq
+
+RUN groupadd --gid "$DEV_GID" ciq \
+    && useradd --uid "$DEV_UID" --gid "$DEV_GID" \
+        --home-dir "$DEV_HOME" --create-home --shell /bin/bash ciq
+
+ENV HOME=${DEV_HOME}
+USER ciq
+
+WORKDIR /workspace
