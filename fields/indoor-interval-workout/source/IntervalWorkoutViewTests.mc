@@ -74,7 +74,7 @@ class IndoorTestView extends IntervalWorkout {
 function indoorWorkoutExplainsTimerRequirement(logger as Test.Logger) as Boolean {
     var trainer = new IndoorTestTrainer();
     var view = new IndoorTestView(trainer);
-    if (view.statusText() != "START TIMER") {
+    if (!view.statusText().equals("START TIMER")) {
         return false;
     }
     view.handleTap();
@@ -82,11 +82,11 @@ function indoorWorkoutExplainsTimerRequirement(logger as Test.Logger) as Boolean
         return false;
     }
     view.onTimerStart();
-    if (view.statusText() != "TAP") {
+    if (!view.statusText().equals("TAP")) {
         return false;
     }
     view.handleTap();
-    return (view.phase() == INTERVAL_PHASE_STARTING) && (view.statusText() == "5");
+    return (view.phase() == INTERVAL_PHASE_STARTING) && view.statusText().equals("5");
 }
 
 (:test)
@@ -100,12 +100,12 @@ function indoorWorkoutShowsBlockedTrainerWithoutAlert(logger as Test.Logger) as 
     info.timerState = Activity.TIMER_STATE_ON;
     info.timerTime = 1000;
     view.compute(info);
-    if (view.statusText() != "NO TRAINER") {
+    if (!view.statusText().equals("NO TRAINER")) {
         return false;
     }
     trainer.ready = true;
     view.compute(info);
-    return view.statusText() == "TAP";
+    return view.statusText().equals("TAP");
 }
 
 (:test)

@@ -123,10 +123,10 @@ module IntervalWorkoutLogic {
     function durationUnitMultiplier(value as Lang.Object or Null) as Number {
         if (value instanceof Lang.String) {
             var unit = value as Lang.String;
-            if (unit == "minutes") {
+            if (unit.equals("minutes")) {
                 return 60;
             }
-            if (unit == "seconds") {
+            if (unit.equals("seconds")) {
                 return 1;
             }
         }
