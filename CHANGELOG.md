@@ -2,6 +2,11 @@
 
 ## Indoor Interval Workout
 
+### Unreleased
+
+- Added visible timer and trainer status messages for blocked workout starts.
+- Prevented a final timer update after Stop from re-enabling trainer control.
+
 ### v0.1.0
 
 - Added a separate indoor interval field for the Garmin Edge Explore 2.

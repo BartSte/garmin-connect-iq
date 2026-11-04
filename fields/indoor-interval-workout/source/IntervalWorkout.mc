@@ -46,6 +46,7 @@ class IntervalWorkout extends WatchUi.DataField {
     hidden var mSettingsDirty as Boolean = true;
     hidden var mPendingSettingsDirty as Boolean = false;
     hidden var mTrainerControlAllowed as Boolean = false;
+    hidden var mTrainerBlocked as Boolean = false;
     hidden var mTrainer as IndoorTrainerController = new IndoorTrainerController();
 
     hidden var mPowerBuf as Array<Number> = [0, 0, 0];
@@ -89,11 +90,13 @@ class IntervalWorkout extends WatchUi.DataField {
         mSessionLocked = result[:sessionLocked];
 
         if (result[:started]) {
+            mTrainerBlocked = false;
             mLastTimerMs = mTimerMs;
         } else if (result[:cancelled]) {
             mTrainer.release();
             finishCancellation();
         } else if (result[:blocked]) {
+            mTrainerBlocked = true;
             emitTrainerUnavailableAlert();
         }
 
@@ -110,6 +113,7 @@ class IntervalWorkout extends WatchUi.DataField {
         mTimerMs = 0;
         mLastTimerMs = 0;
         mTimerRunning = false;
+        mTrainerBlocked = false;
         mSessionLocked = false;
         mSettingsDirty = true;
         mPendingSettingsDirty = false;
@@ -153,9 +157,16 @@ class IntervalWorkout extends WatchUi.DataField {
         updatePower(info);
 
         var deltaMs = mTimerMs - mLastTimerMs;
-        if (deltaMs > 0) {
-            mTimerRunning = true;
-            mTrainerControlAllowed = true;
+        // A final positive timer delta can arrive after Stop. The timer state
+        // determines whether control is allowed; elapsed time alone does not.
+        var timerState = info has :timerState ? info.timerState : null;
+        if (timerState != null) {
+            mTimerRunning = timerState == Activity.TIMER_STATE_ON;
+            mTrainerControlAllowed = mTimerRunning || (timerState == Activity.TIMER_STATE_PAUSED);
+        }
+
+        if ((mState[:phase] == INTERVAL_PHASE_READY) && mTrainer.canStart()) {
+            mTrainerBlocked = false;
         }
 
         var forceTrainerTarget = false;
@@ -168,6 +179,7 @@ class IntervalWorkout extends WatchUi.DataField {
                     mSessionLocked = false;
                     mTrainer.release();
                     finishCancellation();
+                    mTrainerBlocked = true;
                     emitTrainerUnavailableAlert();
                 } else {
                     var advanced = IntervalWorkoutLogic.applyElapsed(mState, mSettings, deltaMs);
@@ -280,7 +292,10 @@ class IntervalWorkout extends WatchUi.DataField {
 
     hidden function intervalTimeText() as String {
         if (mState[:phase] == INTERVAL_PHASE_READY) {
-            return mTimerRunning ? "TAP" : "START";
+            if (!mTimerRunning) {
+                return "START TIMER";
+            }
+            return mTrainerBlocked ? "NO TRAINER" : "TAP";
         }
         if (mState[:phase] == INTERVAL_PHASE_STARTING) {
             return IntervalWorkoutLogic.formatStartCountdown(mState[:remainingMs]);

@@ -183,9 +183,15 @@ alternative.
 It keeps the schedule, touchscreen controls, alerts, and layout from the
 outdoor interval field.
 
+Start the activity timer with the Edge Start/Stop button. The field shows
+`START TIMER` until the timer runs. Then tap the field at `TAP` to start the
+five-second workout countdown. A data field cannot start the activity timer.
+
 A connected ANT+ FE-C trainer must support target-power mode. If the trainer
-is not compatible, tapping the field displays `NO ERG TRAINER`. The countdown
-does not start.
+is unavailable, tapping the field shows `NO TRAINER` in the field. The countdown
+does not start. The field also shows a `NO ERG TRAINER` alert when Connect IQ
+alerts are enabled for this field in the activity settings. The status returns
+to `TAP` when the trainer becomes ready.
 
 The settings contain separate power targets for work, repetition recovery, and
 recovery between sets. The default target values are 280 W, 125 W, and 125 W.

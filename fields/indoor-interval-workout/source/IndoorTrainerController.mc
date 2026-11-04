@@ -11,6 +11,8 @@ class IndoorTrainerController {
     hidden var mWasTracking as Boolean = false;
 
     function initialize() {
+        // Subscribe before the first tap so trainer data can arrive during warmup.
+        getEquipment();
     }
 
     function canStart() as Boolean {
