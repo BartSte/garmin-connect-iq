@@ -10,6 +10,7 @@
 - Added a bottom row with intensity controls and the current percentage.
 - Added visible timer and trainer status messages for blocked workout starts.
 - Prevented a final timer update after Stop from re-enabling trainer control.
+- Retried failed power commands after trainer reconnection and resent the target after trainer capabilities recover.
 
 ### v0.1.0
 

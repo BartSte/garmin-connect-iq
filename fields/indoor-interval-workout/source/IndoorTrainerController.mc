@@ -64,7 +64,9 @@ class IndoorTrainerController {
         var mode = trainerMode(connectedEquipment);
         var targetPowerSupported = (mode == null) ? null : mode.targetPowerSupported;
         if (!IntervalWorkoutLogic.trainerCanStart(tracking, targetPowerSupported)) {
-            mWasTracking = true;
+            // Capabilities can disappear during reconnection before the device
+            // reports a tracking-state change. Resend when they become valid.
+            mWasTracking = false;
             return;
         }
 
@@ -86,7 +88,9 @@ class IndoorTrainerController {
             mReleasePending = false;
             mWasTracking = true;
         } catch (error) {
-            mWasTracking = true;
+            // Keep a failed resend pending even when its phase and target match
+            // the last successful command before the connection was lost.
+            mWasTracking = false;
         }
     }
 
