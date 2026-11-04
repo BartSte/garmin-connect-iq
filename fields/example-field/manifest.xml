@@ -4,7 +4,8 @@
                     name="@Strings.AppName"
                     minSdkVersion="3.3.0"
                     type="datafield"
-                    entry="ExampleField">
+                    entry="ExampleFieldApp"
+                    launcherIcon="@Drawables.LauncherIcon">
         <iq:products>
             <iq:product id="edgeexplore2"/>
         </iq:products>
