@@ -5,13 +5,13 @@ import Toybox.Test;
 (:test)
 function minimal7FormatsShortTimer(logger as Test.Logger) as Lang.Boolean {
     logger.debug("Formatting sub-hour timer");
-    return Minimal7Logic.formatTimer(125000) == "2:05";
+    return Minimal7Logic.formatTimer(125000).equals("2:05");
 }
 
 (:test)
 function minimal7FormatsHourTimer(logger as Test.Logger) as Lang.Boolean {
     logger.debug("Formatting hour timer");
-    return Minimal7Logic.formatTimer(3723000) == "1:02:03";
+    return Minimal7Logic.formatTimer(3723000).equals("1:02:03");
 }
 
 (:test)

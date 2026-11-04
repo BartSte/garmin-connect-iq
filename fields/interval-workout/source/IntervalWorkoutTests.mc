@@ -56,7 +56,7 @@ function intervalWorkoutNormalizesLegacyDurationUnits(logger as Test.Logger) as 
         :recovery_value => 20,
         :recovery_unit => "seconds",
         :set_recovery_value => 5,
-        :set_recovery_unit => "minutes",
+        :set_recovery_unit => "MINUTES".toLower(),
         :work_zone => "5",
         :recovery_zone => "1",
         :set_recovery_zone => "2"
@@ -128,22 +128,22 @@ function intervalWorkoutRejectsInvalidRequiredSettings(logger as Test.Logger) as
     var invalidRecovery = intervalWorkoutTestSettings(1, 1, 40, 0, 0, 5, 1, 1);
 
     return !normalizedFtp[:valid]
-        && (normalizedFtp[:error] == "FTP")
+        && "FTP".equals(normalizedFtp[:error])
         && !invalidWork[:valid]
-        && (invalidWork[:error] == "WORK")
+        && "WORK".equals(invalidWork[:error])
         && !invalidRecovery[:valid]
-        && (invalidRecovery[:error] == "REC");
+        && "REC".equals(invalidRecovery[:error]);
 }
 
 (:test)
 function intervalWorkoutFormatsTimers(logger as Test.Logger) as Lang.Boolean {
     logger.debug("Checking timer formatting");
-    return (IntervalWorkoutLogic.formatRideTimer(495000) == "08:15")
-        && (IntervalWorkoutLogic.formatCountdown(20000) == "00:20")
-        && (IntervalWorkoutLogic.formatStartCountdown(5000) == "5")
-        && (IntervalWorkoutLogic.formatStartCountdown(4001) == "5")
-        && (IntervalWorkoutLogic.formatDuration(240) == "4:00")
-        && (IntervalWorkoutLogic.formatClock(7, 30) == "07:30");
+    return IntervalWorkoutLogic.formatRideTimer(495000).equals("08:15")
+        && IntervalWorkoutLogic.formatCountdown(20000).equals("00:20")
+        && IntervalWorkoutLogic.formatStartCountdown(5000).equals("5")
+        && IntervalWorkoutLogic.formatStartCountdown(4001).equals("5")
+        && IntervalWorkoutLogic.formatDuration(240).equals("4:00")
+        && IntervalWorkoutLogic.formatClock(7, 30).equals("07:30");
 }
 
 (:test)

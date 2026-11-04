@@ -286,7 +286,7 @@ class IntervalWorkout extends WatchUi.DataField {
             text = "COMPLETE";
         }
 
-        if (text != "") {
+        if (!text.equals("")) {
             playTransitionTone(phase);
             WatchUi.DataField.showAlert(new $.IntervalAlertView(text));
         }
