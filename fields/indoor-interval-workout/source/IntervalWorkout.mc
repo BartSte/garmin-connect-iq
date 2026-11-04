@@ -172,9 +172,9 @@ class IntervalWorkout extends WatchUi.DataField {
         var forceTrainerTarget = false;
         if (mSessionLocked && IntervalWorkoutLogic.isTimedPhase(mState[:phase])) {
             if (deltaMs > 0) {
-                var startsWork = (mState[:phase] == INTERVAL_PHASE_STARTING)
+                var startsControlledPhase = (mState[:phase] == INTERVAL_PHASE_STARTING)
                     && (deltaMs >= mState[:remainingMs]);
-                if (startsWork && !mTrainer.canStart()) {
+                if (startsControlledPhase && !mTrainer.canStart()) {
                     mState = IntervalWorkoutLogic.readyState(mSettings);
                     mSessionLocked = false;
                     mTrainer.release();
@@ -317,6 +317,8 @@ class IntervalWorkout extends WatchUi.DataField {
     }
 
     hidden function setProgressText() as String {
+        if (mState[:phase] == INTERVAL_PHASE_WARMUP) { return "WARM-UP"; }
+        if (mState[:phase] == INTERVAL_PHASE_COOLDOWN) { return "COOL-DOWN"; }
         if ((mState[:phase] == INTERVAL_PHASE_COMPLETE) || (mState[:phase] == INTERVAL_PHASE_INVALID)) {
             return "";
         }
@@ -327,6 +329,9 @@ class IntervalWorkout extends WatchUi.DataField {
     }
 
     hidden function repProgressText() as String {
+        if ((mState[:phase] == INTERVAL_PHASE_WARMUP) || (mState[:phase] == INTERVAL_PHASE_COOLDOWN)) {
+            return "";
+        }
         if ((mState[:phase] == INTERVAL_PHASE_COMPLETE) || (mState[:phase] == INTERVAL_PHASE_INVALID)) {
             return "";
         }
@@ -340,7 +345,11 @@ class IntervalWorkout extends WatchUi.DataField {
         }
 
         var text = "";
-        if (phase == INTERVAL_PHASE_WORK) {
+        if (phase == INTERVAL_PHASE_WARMUP) {
+            text = "WARM-UP " + targetPowerText(mSettings[:warmupPower]);
+        } else if (phase == INTERVAL_PHASE_COOLDOWN) {
+            text = "COOL-DOWN " + targetPowerText(mSettings[:cooldownPower]);
+        } else if (phase == INTERVAL_PHASE_WORK) {
             text = "WORK " + targetPowerText(mSettings[:workPower]);
         } else if (phase == INTERVAL_PHASE_RECOVERY) {
             text = "RECOVERY " + targetPowerText(mSettings[:recoveryPower]);

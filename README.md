@@ -197,6 +197,12 @@ The settings contain separate power targets for work, repetition recovery, and
 recovery between sets. The default target values are 280 W, 125 W, and 125 W.
 FTP controls the colors for actual power and the target-power badge.
 
+Warm-up and cool-down each have a duration and a target power. Both durations
+default to `0:00`, which skips the phase. Both target powers default to 125 W.
+The sequence is countdown, warm-up, intervals, final repetition recovery,
+cool-down, then `DONE`. The field shows `WARM-UP` or `COOL-DOWN` during those
+phases. Settings changes during a workout apply after the activity resets.
+
 After each update, the field sends no more than one trainer command. If the
 update crosses multiple phases, it sends the target for the final current
 phase. The field sends the current target again after the trainer reconnects.
@@ -215,6 +221,8 @@ Connect, or Garmin Express.
 3. Pair and connect the ANT+ FE-C trainer in the Edge sensor settings.
 4. Open the data-field settings for Indoor Interval Workout.
 5. Set the FTP, schedule, durations, and phase power targets.
+6. Set the warm-up and cool-down durations and power targets.
+   To skip either phase, set its duration to `0:00`.
 
 The accepted values remain in the local property storage. Keep the application
 UUID unchanged when you replace the sideloaded `.prg`.

@@ -1,4 +1,28 @@
 <settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <setting propertyKey="@Properties.warmup_value" title="@Strings.WarmupDurationTitle">
+        <settingConfig type="numeric" />
+    </setting>
+    <setting propertyKey="@Properties.warmup_unit" title="@Strings.WarmupUnitTitle">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.SecondsOption</listEntry>
+            <listEntry value="60">@Strings.MinutesOption</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.warmup_power" title="@Strings.WarmupPowerTitle">
+        <settingConfig type="numeric" />
+    </setting>
+    <setting propertyKey="@Properties.cooldown_value" title="@Strings.CooldownDurationTitle">
+        <settingConfig type="numeric" />
+    </setting>
+    <setting propertyKey="@Properties.cooldown_unit" title="@Strings.CooldownUnitTitle">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.SecondsOption</listEntry>
+            <listEntry value="60">@Strings.MinutesOption</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.cooldown_power" title="@Strings.CooldownPowerTitle">
+        <settingConfig type="numeric" />
+    </setting>
     <setting propertyKey="@Properties.ftp" title="@Strings.FtpTitle">
         <settingConfig type="numeric" />
     </setting>

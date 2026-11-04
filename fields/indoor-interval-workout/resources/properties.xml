@@ -1,5 +1,11 @@
 <properties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
     <property id="ftp" type="number">248</property>
+    <property id="warmup_value" type="number">0</property>
+    <property id="warmup_unit" type="number">1</property>
+    <property id="warmup_power" type="number">125</property>
+    <property id="cooldown_value" type="number">0</property>
+    <property id="cooldown_unit" type="number">1</property>
+    <property id="cooldown_power" type="number">125</property>
     <property id="set_count" type="number">3</property>
     <property id="rep_count" type="number">10</property>
     <property id="work_value" type="number">40</property>

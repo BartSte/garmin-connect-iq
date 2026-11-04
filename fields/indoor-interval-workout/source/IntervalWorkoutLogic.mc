@@ -8,6 +8,8 @@ const INTERVAL_PHASE_WORK         = 3;
 const INTERVAL_PHASE_RECOVERY     = 4;
 const INTERVAL_PHASE_SET_RECOVERY = 5;
 const INTERVAL_PHASE_COMPLETE     = 6;
+const INTERVAL_PHASE_WARMUP       = 7;
+const INTERVAL_PHASE_COOLDOWN     = 8;
 
 const INTERVAL_START_COUNTDOWN_MS = 5000;
 
@@ -56,6 +58,10 @@ module IntervalWorkoutLogic {
             :workSecs => 40,
             :recoverySecs => 20,
             :setRecoverySecs => 240,
+            :warmupSecs => 0,
+            :cooldownSecs => 0,
+            :warmupPower => 125,
+            :cooldownPower => 125,
             :workPower => INTERVAL_DEFAULT_WORK_POWER,
             :recoveryPower => INTERVAL_DEFAULT_RECOVERY_POWER,
             :setRecoveryPower => INTERVAL_DEFAULT_SET_RECOVERY_POWER,
@@ -142,6 +148,10 @@ module IntervalWorkoutLogic {
             :workSecs => secondsFromValue(raw[:work_value], raw[:work_unit], 40),
             :recoverySecs => secondsFromValue(raw[:recovery_value], raw[:recovery_unit], 20),
             :setRecoverySecs => secondsFromValue(raw[:set_recovery_value], raw[:set_recovery_unit], 240),
+            :warmupSecs => secondsFromValue(raw[:warmup_value], raw[:warmup_unit], 0),
+            :cooldownSecs => secondsFromValue(raw[:cooldown_value], raw[:cooldown_unit], 0),
+            :warmupPower => targetPowerFromValue(raw[:warmup_power], 125),
+            :cooldownPower => targetPowerFromValue(raw[:cooldown_power], 125),
             :workPower => targetPowerFromValue(raw[:work_power], INTERVAL_DEFAULT_WORK_POWER),
             :recoveryPower => targetPowerFromValue(raw[:recovery_power], INTERVAL_DEFAULT_RECOVERY_POWER),
             :setRecoveryPower => targetPowerFromValue(
@@ -170,6 +180,9 @@ module IntervalWorkoutLogic {
         } else if (settings[:setRecoverySecs] < 0) {
             settings[:valid] = false;
             settings[:error] = "SET";
+        } else if ((settings[:warmupSecs] < 0) || (settings[:cooldownSecs] < 0)) {
+            settings[:valid] = false;
+            settings[:error] = "DURATION";
         }
 
         return settings;
@@ -193,11 +206,7 @@ module IntervalWorkoutLogic {
     }
 
     function isSessionLockedPhase(phase as Number) as Boolean {
-        return (phase == INTERVAL_PHASE_STARTING)
-            || (phase == INTERVAL_PHASE_WORK)
-            || (phase == INTERVAL_PHASE_RECOVERY)
-            || (phase == INTERVAL_PHASE_SET_RECOVERY)
-            || (phase == INTERVAL_PHASE_COMPLETE);
+        return isTimedPhase(phase) || (phase == INTERVAL_PHASE_COMPLETE);
     }
 
     function applyTap(
@@ -351,8 +360,17 @@ module IntervalWorkoutLogic {
     }
 
     function targetPowerForPhase(settings as Dictionary, phase as Number) as Number or Null {
-        if ((phase == INTERVAL_PHASE_READY) || (phase == INTERVAL_PHASE_STARTING) || (phase == INTERVAL_PHASE_WORK)) {
+        if ((phase == INTERVAL_PHASE_READY) || (phase == INTERVAL_PHASE_STARTING)) {
+            return settings[:warmupSecs] > 0 ? settings[:warmupPower] : settings[:workPower];
+        }
+        if (phase == INTERVAL_PHASE_WORK) {
             return settings[:workPower];
+        }
+        if (phase == INTERVAL_PHASE_WARMUP) {
+            return settings[:warmupPower];
+        }
+        if (phase == INTERVAL_PHASE_COOLDOWN) {
+            return settings[:cooldownPower];
         }
         if (phase == INTERVAL_PHASE_RECOVERY) {
             return settings[:recoveryPower];
@@ -364,14 +382,8 @@ module IntervalWorkoutLogic {
     }
 
     function controlledPowerForPhase(settings as Dictionary, phase as Number) as Number or Null {
-        if (phase == INTERVAL_PHASE_WORK) {
-            return settings[:workPower];
-        }
-        if (phase == INTERVAL_PHASE_RECOVERY) {
-            return settings[:recoveryPower];
-        }
-        if (phase == INTERVAL_PHASE_SET_RECOVERY) {
-            return settings[:setRecoveryPower];
+        if (isTimedPhase(phase) && (phase != INTERVAL_PHASE_STARTING)) {
+            return targetPowerForPhase(settings, phase);
         }
         return null;
     }
@@ -422,6 +434,16 @@ module IntervalWorkoutLogic {
 
     function nextPhaseState(state as Dictionary, settings as Dictionary) as Dictionary {
         if (state[:phase] == INTERVAL_PHASE_STARTING) {
+            if (settings[:warmupSecs] > 0) {
+                var warmup = copySessionState(state);
+                warmup[:phase] = INTERVAL_PHASE_WARMUP;
+                warmup[:remainingMs] = settings[:warmupSecs] * 1000;
+                return warmup;
+            }
+            return startWorkState(1, 1, settings);
+        }
+
+        if (state[:phase] == INTERVAL_PHASE_WARMUP) {
             return startWorkState(1, 1, settings);
         }
 
@@ -448,6 +470,16 @@ module IntervalWorkoutLogic {
             if (state[:currentRep] < settings[:repCount]) {
                 return startWorkState(state[:currentSet], state[:currentRep] + 1, settings);
             }
+            if (settings[:cooldownSecs] > 0) {
+                var cooldown = copySessionState(state);
+                cooldown[:phase] = INTERVAL_PHASE_COOLDOWN;
+                cooldown[:remainingMs] = settings[:cooldownSecs] * 1000;
+                return cooldown;
+            }
+            return completeState(state);
+        }
+
+        if (state[:phase] == INTERVAL_PHASE_COOLDOWN) {
             return completeState(state);
         }
 
@@ -460,6 +492,8 @@ module IntervalWorkoutLogic {
 
     function isTimedPhase(phase as Number) as Boolean {
         return (phase == INTERVAL_PHASE_STARTING)
+            || (phase == INTERVAL_PHASE_WARMUP)
+            || (phase == INTERVAL_PHASE_COOLDOWN)
             || (phase == INTERVAL_PHASE_WORK)
             || (phase == INTERVAL_PHASE_RECOVERY)
             || (phase == INTERVAL_PHASE_SET_RECOVERY);

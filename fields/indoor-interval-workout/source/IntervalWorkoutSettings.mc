@@ -13,6 +13,12 @@ module IntervalWorkoutSettings {
     function load() as Dictionary {
         return IntervalWorkoutLogic.normalizeSettings({
             :ftp => Application.Properties.getValue("ftp"),
+            :warmup_value => Application.Properties.getValue("warmup_value"),
+            :warmup_unit => Application.Properties.getValue("warmup_unit"),
+            :warmup_power => Application.Properties.getValue("warmup_power"),
+            :cooldown_value => Application.Properties.getValue("cooldown_value"),
+            :cooldown_unit => Application.Properties.getValue("cooldown_unit"),
+            :cooldown_power => Application.Properties.getValue("cooldown_power"),
             :set_count => Application.Properties.getValue("set_count"),
             :rep_count => Application.Properties.getValue("rep_count"),
             :work_value => Application.Properties.getValue("work_value"),
@@ -80,6 +86,26 @@ class IntervalWorkoutSettingsMenu extends WatchUi.Menu2 {
         Menu2.initialize({:title => Rez.Strings.SettingsTitle});
 
         var settings = IntervalWorkoutSettings.load();
+        addItem(new WatchUi.MenuItem(
+            Rez.Strings.WarmupDurationTitle,
+            IntervalWorkoutLogic.formatDuration(settings[:warmupSecs]),
+            :warmup_duration, null
+        ));
+        addItem(new WatchUi.MenuItem(
+            Rez.Strings.WarmupPowerTitle,
+            IntervalWorkoutSettings.formatPickerValue(settings[:warmupPower], INTERVAL_PICKER_POWER),
+            :warmup_power, null
+        ));
+        addItem(new WatchUi.MenuItem(
+            Rez.Strings.CooldownDurationTitle,
+            IntervalWorkoutLogic.formatDuration(settings[:cooldownSecs]),
+            :cooldown_duration, null
+        ));
+        addItem(new WatchUi.MenuItem(
+            Rez.Strings.CooldownPowerTitle,
+            IntervalWorkoutSettings.formatPickerValue(settings[:cooldownPower], INTERVAL_PICKER_POWER),
+            :cooldown_power, null
+        ));
         addItem(new WatchUi.MenuItem(
             Rez.Strings.FtpTitle,
             IntervalWorkoutSettings.formatPickerValue(settings[:ftp], INTERVAL_PICKER_FTP),
@@ -150,7 +176,19 @@ class IntervalWorkoutSettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
         var id = item.getId();
         var settings = IntervalWorkoutSettings.load();
 
-        if (id == :ftp) {
+        if (id == :warmup_duration) {
+            pushDurationPicker(Rez.Strings.WarmupDurationTitle, settings[:warmupSecs],
+                "warmup_value", "warmup_unit", true, item);
+        } else if (id == :cooldown_duration) {
+            pushDurationPicker(Rez.Strings.CooldownDurationTitle, settings[:cooldownSecs],
+                "cooldown_value", "cooldown_unit", true, item);
+        } else if (id == :warmup_power) {
+            pushSinglePicker(Rez.Strings.WarmupPowerTitle, settings[:warmupPower],
+                INTERVAL_MIN_TARGET_POWER, INTERVAL_MAX_TARGET_POWER, INTERVAL_PICKER_POWER, "warmup_power", item);
+        } else if (id == :cooldown_power) {
+            pushSinglePicker(Rez.Strings.CooldownPowerTitle, settings[:cooldownPower],
+                INTERVAL_MIN_TARGET_POWER, INTERVAL_MAX_TARGET_POWER, INTERVAL_PICKER_POWER, "cooldown_power", item);
+        } else if (id == :ftp) {
             pushSinglePicker(
                 Rez.Strings.FtpTitle,
                 settings[:ftp],

@@ -4,6 +4,7 @@
 
 ### Unreleased
 
+- Added optional warm-up and cool-down phases with separate duration and power settings.
 - Added visible timer and trainer status messages for blocked workout starts.
 - Prevented a final timer update after Stop from re-enabling trainer control.
 
