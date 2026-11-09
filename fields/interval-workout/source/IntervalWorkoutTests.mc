@@ -389,3 +389,33 @@ function intervalWorkoutDurationPickerEncoding(logger as Test.Logger) as Lang.Bo
         && IntervalWorkoutSettings.durationIsValid(1, false)
         && IntervalWorkoutSettings.durationIsValid(0, true);
 }
+
+// Both interval apps use the same cadence display and on-device picker behavior.
+(:test)
+function intervalWorkoutCadenceRangeAndColors(logger as Test.Logger) as Lang.Boolean {
+    logger.debug("Checking cadence bounds, highlighting, and missing sensor values");
+    var defaults = IntervalWorkoutLogic.cadenceBounds(null, null);
+    var swapped = IntervalWorkoutLogic.cadenceBounds(120, 70);
+    var clamped = IntervalWorkoutLogic.cadenceBounds(20, 200);
+    var minPicker = new IntervalWorkoutNumberPickerFactory(40, 110, INTERVAL_PICKER_CADENCE);
+    var maxPicker = new IntervalWorkoutNumberPickerFactory(80, 150, INTERVAL_PICKER_CADENCE);
+
+    var inside = IntervalWorkoutLogic.cadenceColors(100, true, 80, 110, Graphics.COLOR_WHITE);
+    var lower = IntervalWorkoutLogic.cadenceColors(80, true, 80, 110, Graphics.COLOR_WHITE);
+    var upper = IntervalWorkoutLogic.cadenceColors(110, true, 80, 110, Graphics.COLOR_WHITE);
+    var outside = IntervalWorkoutLogic.cadenceColors(111, true, 80, 110, Graphics.COLOR_WHITE);
+    var missing = IntervalWorkoutLogic.cadenceColors(100, false, 80, 110, Graphics.COLOR_WHITE);
+
+    return defaults[:minimum] == 80 && defaults[:maximum] == 110
+        && swapped[:minimum] == 70 && swapped[:maximum] == 120
+        && clamped[:minimum] == 40 && clamped[:maximum] == 150
+        && inside[:background] == INTERVAL_CADENCE_TARGET_COLOR
+        && lower[:background] == INTERVAL_CADENCE_TARGET_COLOR
+        && upper[:background] == INTERVAL_CADENCE_TARGET_COLOR
+        && inside[:foreground] == Graphics.COLOR_BLACK
+        && outside[:background] == null && outside[:foreground] == Graphics.COLOR_WHITE
+        && missing[:background] == null && missing[:foreground] == Graphics.COLOR_WHITE
+        && IntervalWorkoutSettings.formatPickerValue(100, INTERVAL_PICKER_CADENCE).equals("100 rpm")
+        && minPicker.getSize() == 71 && minPicker.getIndex(80) == 40
+        && maxPicker.getSize() == 71 && maxPicker.getIndex(100) == 20;
+}
