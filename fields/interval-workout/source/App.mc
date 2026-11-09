@@ -20,7 +20,7 @@ class IntervalWorkoutApp extends Application.AppBase {
 
     function getSettingsView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] or Null {
         var menu = new IntervalWorkoutSettingsMenu();
-        return [menu, new IntervalWorkoutSettingsMenuDelegate(self)];
+        return [menu, new IntervalWorkoutSettingsMenuDelegate(self, menu)];
     }
 
     function onSettingsChanged() as Void {
