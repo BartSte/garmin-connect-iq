@@ -118,10 +118,23 @@ The scripts assume:
 
 ## Interval workout field
 
-The interval field shows **cadence** in the top-left cell instead of clock time.
-The ride timer stays on the right. The cadence cell turns green from **80–110 rpm** by default.
-Set **Cadence Min** and **Cadence Max** in on-device settings to customize the inclusive range.
-The bounds are independent of the saved workout schedule. The cadence cell shows `--` without a sensor.
+Both interval fields use the same four-row layout:
+
+| Left cell | Right cell |
+| --- | --- |
+| Interval time remaining / start status | Ride timer |
+| 30s average power | 3s average power |
+| Target power or zone | Cadence |
+| Set progress | Repetition progress |
+
+The outdoor field shows its configured **target zone** (Z1–Z7), not a single target watt value.
+The indoor field shows the actual ERG target watts, adjusted for intensity.
+Both power cells use Coggan FTP-zone colors independently.
+The power averages use the latest 30 or 3 samples, approximately one per second.
+The cadence cell turns green within the default **80–110 rpm** range.
+Set **Cadence Min** and **Cadence Max** on the Edge to customize the inclusive range.
+The cadence value shows `--` when the sensor value is unavailable.
+Cadence bounds do not affect the saved interval schedule.
 
 
 `fields/interval-workout` is a full-screen training field for structured intervals on the **Edge Explore 2**.
@@ -185,8 +198,10 @@ alternative.
 
 ## Indoor interval workout field
 
-The indoor interval field uses the same top-left cadence display and configurable **80–110 rpm** default range.
-The ride timer, interval countdown, power target, set/rep progress, and ERG intensity buttons remain unchanged.
+The indoor field uses the four-row layout above and retains the bottom ERG intensity controls.
+The interval countdown occupies the top-left cell. The ride timer remains on the top-right.
+The 30s and 3s power cells occupy the second row.
+The target watts and cadence occupy the third row.
 
 
 `fields/indoor-interval-workout` is a separate field for indoor ERG workouts.
