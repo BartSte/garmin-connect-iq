@@ -19,11 +19,12 @@ Each subdirectory under `fields/` is a self-contained Connect IQ project that ca
 
 ## Data fields
 
-| Folder             | Description                                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `minimal-7`        | Full-screen field: time, timer, 3s power (zone color), speed, cadence, ascent, distance, and an optional extra power average |
-| `interval-workout` | Full-screen interval-training field: touch start, zone-colored 3s power, requested zone, countdown, and set/rep progress |
-| `example-field`    | Starter template – displays current speed in km/h                                                                         |
+| Folder                        | Description                                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `minimal-7`                   | Full-screen field: time, timer, 3s power (zone color), speed, cadence, ascent, distance, and an optional extra power average |
+| `interval-workout`            | Full-screen interval-training field: touch start, zone-colored 3s power, requested zone, countdown, and set/rep progress |
+| `indoor-interval-workout`     | Indoor interval field with automatic ANT+ FE-C target-power control                                                       |
+| `example-field`               | Starter template – displays current speed in km/h                                                                         |
 
 ## Getting started
 
@@ -176,6 +177,71 @@ the sideloaded `.prg` so the new build continues to use the existing property
 storage. Existing phone/Store-style XML settings remain supported as an
 alternative.
 
+## Indoor interval workout field
+
+`fields/indoor-interval-workout` is a separate field for indoor ERG workouts.
+It adds trainer control, optional warm-up and cool-down phases, and live
+intensity controls to the interval schedule.
+
+Start the activity timer with the Edge Start/Stop button. The field shows
+`START TIMER` until the timer runs. Then tap the field at `TAP` to start the
+five-second workout countdown. A data field cannot start the activity timer.
+
+A connected ANT+ FE-C trainer must support target-power mode. If the trainer
+is unavailable, tapping the field shows `NO TRAINER` in the field. The countdown
+does not start. The field also shows a `NO ERG TRAINER` alert when Connect IQ
+alerts are enabled for this field in the activity settings. The status returns
+to `TAP` when the trainer becomes ready.
+
+The settings contain separate power targets for work, repetition recovery, and
+recovery between sets. The default target values are 280 W, 125 W, and 125 W.
+FTP controls the colors for actual power and the target-power badge.
+
+Warm-up and cool-down each have a duration and a target power. Both durations
+default to `0:00`, which skips the phase. Both target powers default to 125 W.
+The sequence is countdown, warm-up, intervals, final repetition recovery,
+cool-down, then `DONE`. The field shows `WARM-UP` or `COOL-DOWN` during those
+phases. Settings changes during a workout apply after the activity resets.
+
+The bottom row contains `−`, the current intensity percentage, and `+`.
+Each workout starts at 100%. During the countdown or a workout phase, each
+tap on `−` or `+` changes intensity by **1 percentage point**. The range is
+1% through 200%. These controls cannot start or cancel the countdown.
+A tap in the main field starts or cancels the countdown as before.
+
+An intensity change immediately adjusts the current trainer target. The same
+percentage applies to all subsequent targets, including warm-up and cool-down.
+The field rounds each target to the nearest watt and limits it to 4000 W.
+For example, 280 W becomes 283 W at 101%. The power badge and transition alerts
+show the adjusted target. The saved power settings do not change.
+
+After each update, the field sends no more than one trainer command. If the
+update crosses multiple phases, it sends the target for the final current
+phase. The field sends the current target again after the trainer reconnects.
+
+Auto-Pause freezes the countdown and keeps the current target. Intensity
+controls can still adjust that target. A manual timer stop releases trainer
+control. Intensity changes during a manual stop apply when the timer resumes.
+Cancellation, completion after cool-down, timer reset, and application shutdown
+also release trainer control. The preferred release mode is 0% basic resistance.
+The fallback target is 0 W. Cancellation and timer reset restore 100% intensity.
+
+### Indoor workout settings
+
+The on-device settings menu works without the Connect IQ Store, Garmin
+Connect, or Garmin Express.
+
+1. Build `fields/indoor-interval-workout/bin/indoor-interval-workout-edgeexplore2.prg`.
+2. Copy the `.prg` to `Garmin/Apps/` on the Edge over USB.
+3. Pair and connect the ANT+ FE-C trainer in the Edge sensor settings.
+4. Open the data-field settings for Indoor Interval Workout.
+5. Set the FTP, schedule, durations, and phase power targets.
+6. Set the warm-up and cool-down durations and power targets.
+   To skip either phase, set its duration to `0:00`.
+
+The accepted values remain in the local property storage. Keep the application
+UUID unchanged when you replace the sideloaded `.prg`.
+
 ## Minimal-7 settings
 
 Minimal-7 exposes FTP and an optional extra power average directly on the Edge Explore 2. This works for
@@ -254,6 +320,20 @@ mkdir -p fields/interval-workout/bin
 monkeyc \
   -f fields/interval-workout/monkey.jungle \
   -o fields/interval-workout/bin/interval-workout-edgeexplore2.prg \
+  -y developer_key.der \
+  -d edgeexplore2 \
+  -r \
+  -w
+```
+
+For `indoor-interval-workout`:
+
+```bash
+mkdir -p fields/indoor-interval-workout/bin
+
+monkeyc \
+  -f fields/indoor-interval-workout/monkey.jungle \
+  -o fields/indoor-interval-workout/bin/indoor-interval-workout-edgeexplore2.prg \
   -y developer_key.der \
   -d edgeexplore2 \
   -r \
@@ -342,6 +422,7 @@ CI generates a temporary signing key for tests.
 This repo now keeps testable logic in helper modules and places unit tests directly in each field project:
 
 - `fields/example-field/source/ExampleFieldTests.mc`
+- `fields/indoor-interval-workout/source/IntervalWorkoutTests.mc`
 - `fields/interval-workout/source/IntervalWorkoutTests.mc`
 - `fields/minimal-7/source/Minimal7Tests.mc`
 
