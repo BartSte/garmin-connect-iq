@@ -1,4 +1,5 @@
 import Toybox.Activity;
+import Toybox.Lang;
 import Toybox.Test;
 
 (:test)
