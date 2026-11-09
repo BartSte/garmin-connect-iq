@@ -118,6 +118,12 @@ The scripts assume:
 
 ## Interval workout field
 
+The interval field shows **cadence** in the top-left cell instead of clock time.
+The ride timer stays on the right. The cadence cell turns green from **80–110 rpm** by default.
+Set **Cadence Min** and **Cadence Max** in on-device settings to customize the inclusive range.
+The bounds are independent of the saved workout schedule. The cadence cell shows `--` without a sensor.
+
+
 `fields/interval-workout` is a full-screen training field for structured intervals on the **Edge Explore 2**.
 
 Behavior:
@@ -178,6 +184,10 @@ storage. Existing phone/Store-style XML settings remain supported as an
 alternative.
 
 ## Indoor interval workout field
+
+The indoor interval field uses the same top-left cadence display and configurable **80–110 rpm** default range.
+The ride timer, interval countdown, power target, set/rep progress, and ERG intensity buttons remain unchanged.
+
 
 `fields/indoor-interval-workout` is a separate field for indoor ERG workouts.
 It adds trainer control, optional warm-up and cool-down phases, and live
