@@ -37,8 +37,6 @@ class IntervalWorkout extends WatchUi.DataField {
 
     hidden var mSettings as Dictionary = IntervalWorkoutLogic.defaultSettings();
     hidden var mState as Dictionary = IntervalWorkoutLogic.defaultSessionState();
-    hidden var mHour as Number = 0;
-    hidden var mMinute as Number = 0;
     hidden var mTimerMs as Number = 0;
     hidden var mLastTimerMs as Number = 0;
     hidden var mTimerRunning as Boolean = false;
@@ -57,6 +55,10 @@ class IntervalWorkout extends WatchUi.DataField {
     hidden var mPowerCount as Number = 0;
     hidden var m3sPower as Number = 0;
     hidden var mHasPower as Boolean = false;
+    hidden var mCadence as Number = 0;
+    hidden var mHasCadence as Boolean = false;
+    hidden var mCadenceMin as Number = INTERVAL_DEFAULT_CADENCE_MIN;
+    hidden var mCadenceMax as Number = INTERVAL_DEFAULT_CADENCE_MAX;
 
     function initialize() {
         DataField.initialize();
@@ -175,12 +177,11 @@ class IntervalWorkout extends WatchUi.DataField {
     function compute(info as Activity.Info) as Void {
         maybeReloadSettings();
 
-        var clock = System.getClockTime();
-        mHour = clock.hour;
-        mMinute = clock.min;
         mTimerMs = IntervalWorkoutLogic.valueToNumber(info has :timerTime ? info.timerTime : null, 0);
 
         updatePower(info);
+        mHasCadence = (info has :currentCadence) && (info.currentCadence != null);
+        mCadence = IntervalWorkoutLogic.valueToNumber(info has :currentCadence ? info.currentCadence : null, 0);
 
         var deltaMs = mTimerMs - mLastTimerMs;
         // A final positive timer delta can arrive after Stop. The timer state
@@ -260,7 +261,7 @@ class IntervalWorkout extends WatchUi.DataField {
         );
         var targetPower = currentTargetPower();
 
-        drawRow(dc, 0, row1Y, w, row1H, fg, null, currentClockText(), IntervalWorkoutLogic.formatRideTimer(mTimerMs));
+        drawHeaderRow(dc, w, row1Y, row1H, fg);
         drawPowerRow(
             dc,
             0,
@@ -286,6 +287,12 @@ class IntervalWorkout extends WatchUi.DataField {
 
     hidden function loadSettings() as Void {
         mSettings = IntervalWorkoutSettings.load();
+        var cadenceBounds = IntervalWorkoutLogic.cadenceBounds(
+            Application.Properties.getValue("cadence_min"),
+            Application.Properties.getValue("cadence_max")
+        );
+        mCadenceMin = cadenceBounds[:minimum];
+        mCadenceMax = cadenceBounds[:maximum];
     }
 
     hidden function syncIdlePhase() as Void {
@@ -312,10 +319,6 @@ class IntervalWorkout extends WatchUi.DataField {
         mPowerIdx = powerState[:nextIndex];
         mPowerCount = powerState[:sampleCount];
         m3sPower = powerState[:average];
-    }
-
-    hidden function currentClockText() as String {
-        return IntervalWorkoutLogic.formatClock(mHour, mMinute);
     }
 
     hidden function currentPowerText() as String {
@@ -439,6 +442,25 @@ class IntervalWorkout extends WatchUi.DataField {
         dc.drawLine(0, y + h - 1, w - 1, y + h - 1);
         dc.drawLine(third, y, third, y + h - 1);
         dc.drawLine(rightX, y, rightX, y + h - 1);
+    }
+
+    hidden function cadenceText() as String {
+        return mHasCadence ? mCadence.format("%d") : "--";
+    }
+
+    hidden function drawHeaderRow(
+        dc as Graphics.Dc,
+        w as Number,
+        y as Number,
+        h as Number,
+        fg as Number
+    ) as Void {
+        var half = w / 2;
+        var colors = IntervalWorkoutLogic.cadenceColors(
+            mCadence, mHasCadence, mCadenceMin, mCadenceMax, fg
+        );
+        drawCell(dc, 0, y, half, h, colors[:foreground], colors[:background], cadenceText(), standardFonts());
+        drawCell(dc, half, y, w - half, h, fg, null, IntervalWorkoutLogic.formatRideTimer(mTimerMs), standardFonts());
     }
 
     hidden function drawPowerRow(
