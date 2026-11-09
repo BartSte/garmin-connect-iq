@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <properties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
-    <!-- FTP in watts, used for Coggan power zone coloring on the 3s power row. -->
+    <!-- FTP in watts, used for Coggan power zone coloring on both power cells. -->
     <property id="ftp" type="number">248</property>
+    <property id="extra_power_seconds" type="number">0</property>
     <property id="cadence_min" type="number">80</property>
     <property id="cadence_max" type="number">95</property>
 </properties>
