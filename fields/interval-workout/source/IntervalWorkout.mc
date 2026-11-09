@@ -50,6 +50,8 @@ class IntervalWorkout extends WatchUi.DataField {
     hidden var mPowerCount as Number = 0;
     hidden var m3sPower as Number = 0;
     hidden var mHasPower as Boolean = false;
+    hidden var m30sAverage as IntervalPowerAverage = new IntervalPowerAverage(30);
+    hidden var m30sPower as Number = 0;
     hidden var mCadence as Number = 0;
     hidden var mHasCadence as Boolean = false;
     hidden var mCadenceMin as Number = INTERVAL_DEFAULT_CADENCE_MIN;
@@ -173,25 +175,10 @@ class IntervalWorkout extends WatchUi.DataField {
         dc.clear();
 
         var fg = defaultFgColor();
-        var powerColors = IntervalWorkoutLogic.actualPowerColors(
-            m3sPower,
-            mSettings[:ftp],
-            mHasPower
-        );
-        var targetZone = currentTargetZone();
-
-        drawHeaderRow(dc, w, row1Y, row1H, fg);
-        drawPowerRow(
-            dc,
-            0,
-            row2Y,
-            w,
-            row2H,
-            powerColors[:foreground],
-            powerColors[:background],
-            currentPowerText()
-        );
-        drawStatusRow(dc, 0, row3Y, w, row3H, fg, intervalTimeText(), targetZone);
+        drawRow(dc, 0, row1Y, w, row1H, fg, null,
+            intervalTimeText(), IntervalWorkoutLogic.formatRideTimer(mTimerMs));
+        drawPowerRow(dc, w, row2Y, row2H);
+        drawTargetCadenceRow(dc, w, row3Y, row3H, fg);
         drawRow(dc, 0, row4Y, w, row4H, fg, null, setProgressText(), repProgressText());
         drawBorders(dc, w, h, row1H, row2Y + row2H, row4Y, fg);
     }
@@ -227,10 +214,11 @@ class IntervalWorkout extends WatchUi.DataField {
         mPowerIdx = powerState[:nextIndex];
         mPowerCount = powerState[:sampleCount];
         m3sPower = powerState[:average];
+        m30sPower = m30sAverage.push(rawPower);
     }
 
-    hidden function currentPowerText() as String {
-        return mHasPower ? m3sPower.format("%d") : "--";
+    hidden function powerText(power as Number) as String {
+        return mHasPower ? power.format("%d") : "--";
     }
 
     hidden function intervalTimeText() as String {
@@ -312,75 +300,40 @@ class IntervalWorkout extends WatchUi.DataField {
         return mHasCadence ? mCadence.format("%d") : "--";
     }
 
-    hidden function drawHeaderRow(
-        dc as Graphics.Dc,
-        w as Number,
-        y as Number,
-        h as Number,
-        fg as Number
+    // Match the Minimal-7 power row: long average on the left, 3s power on the right.
+    hidden function drawPowerRow(dc as Graphics.Dc, w as Number, y as Number, h as Number) as Void {
+        var half = w / 2;
+        var avgColors = IntervalWorkoutLogic.actualPowerColors(
+            m30sPower, mSettings[:ftp], mHasPower
+        );
+        var currentColors = IntervalWorkoutLogic.actualPowerColors(
+            m3sPower, mSettings[:ftp], mHasPower
+        );
+        drawCell(dc, 0, y, half, h, avgColors[:foreground], avgColors[:background],
+            powerText(m30sPower), powerFonts());
+        drawCell(dc, half, y, w - half, h, currentColors[:foreground], currentColors[:background],
+            powerText(m3sPower), powerFonts());
+    }
+
+    // The right-hand cadence cell stays in its Minimal-7 position.
+    hidden function drawTargetCadenceRow(
+        dc as Graphics.Dc, w as Number, y as Number, h as Number, fg as Number
     ) as Void {
         var half = w / 2;
-        var colors = IntervalWorkoutLogic.cadenceColors(
+        var targetZone = currentTargetZone();
+        if (targetZone == null) {
+            drawCell(dc, 0, y, half, h, fg, null, "", standardFonts());
+        } else {
+            var zone = targetZone as Number;
+            drawCell(dc, 0, y, half, h, IntervalWorkoutLogic.zoneTextColor(zone),
+                IntervalWorkoutLogic.zoneColor(zone), IntervalWorkoutLogic.zoneLabel(zone),
+                standardFonts());
+        }
+        var cadenceColors = IntervalWorkoutLogic.cadenceColors(
             mCadence, mHasCadence, mCadenceMin, mCadenceMax, fg
         );
-        drawCell(dc, 0, y, half, h, colors[:foreground], colors[:background], cadenceText(), standardFonts());
-        drawCell(dc, half, y, w - half, h, fg, null, IntervalWorkoutLogic.formatRideTimer(mTimerMs), standardFonts());
-    }
-
-    hidden function drawPowerRow(
-        dc as Graphics.Dc,
-        x as Number,
-        y as Number,
-        w as Number,
-        h as Number,
-        fg as Number,
-        bg as Number,
-        text as String
-    ) as Void {
-        dc.setColor(bg, Graphics.COLOR_TRANSPARENT);
-        dc.fillRectangle(x + 1, y + 1, w - 2, h - 2);
-        dc.setColor(fg, Graphics.COLOR_TRANSPARENT);
-        dc.setClip(x + 1, y + 1, w - 2, h - 2);
-        dc.drawText(
-            x + (w / 2),
-            y + (h / 2),
-            fittingFont(dc, text, w - (TEXT_PADDING * 2), h - (TEXT_PADDING * 2), powerFonts()),
-            text,
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
-        );
-        dc.clearClip();
-    }
-
-    hidden function drawStatusRow(
-        dc as Graphics.Dc,
-        x as Number,
-        y as Number,
-        w as Number,
-        h as Number,
-        defaultFg as Number,
-        statusText as String,
-        targetZone as Number or Null
-    ) as Void {
-        var half = w / 2;
-        drawCell(dc, x, y, half, h, defaultFg, null, statusText, standardFonts());
-
-        if (targetZone == null) {
-            drawCell(dc, x + half, y, w - half, h, defaultFg, null, "", standardFonts());
-            return;
-        }
-
-        var zone = targetZone as Number;
-        drawCell(
-            dc,
-            x + half,
-            y,
-            w - half,
-            h,
-            IntervalWorkoutLogic.zoneTextColor(zone),
-            IntervalWorkoutLogic.zoneColor(zone),
-            IntervalWorkoutLogic.zoneLabel(zone),
-            standardFonts()
-        );
+        drawCell(dc, half, y, w - half, h, cadenceColors[:foreground], cadenceColors[:background],
+            cadenceText(), standardFonts());
     }
 
     hidden function drawRow(
@@ -452,6 +405,7 @@ class IntervalWorkout extends WatchUi.DataField {
         dc.drawLine(rightX, 0, rightX, bottomY);
 
         dc.drawLine(mid, 0, mid, row1H);
+        dc.drawLine(mid, row1H, mid, row3Y);
         dc.drawLine(mid, row3Y, mid, row4Y);
         dc.drawLine(mid, row4Y, mid, bottomY);
     }
