@@ -11,4 +11,6 @@
     <property id="work_zone" type="number">5</property>
     <property id="recovery_zone" type="number">1</property>
     <property id="set_recovery_zone" type="number">1</property>
+    <property id="cadence_min" type="number">80</property>
+    <property id="cadence_max" type="number">110</property>
 </properties>
