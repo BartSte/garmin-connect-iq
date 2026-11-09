@@ -621,4 +621,4 @@ class IntervalPowerAverage {
         }
         return (mSum + mCount / 2) / mCount;
     }
-
+}
