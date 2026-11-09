@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <strings>
     <string id="AppName">Minimal 7</string>
-    <string id="SettingsTitle">Minimal 7 FTP</string>
+    <string id="SettingsTitle">Minimal 7</string>
     <string id="FtpTitle">FTP (W)</string>
-    <string id="FtpEditInstruction">Tap to edit</string>
+    <string id="ExtraPowerTitle">Extra power average</string>
+    <string id="OffOption">Off</string>
     <string id="CadenceMinTitle">Cadence Min (rpm)</string>
     <string id="CadenceMaxTitle">Cadence Max (rpm)</string>
 </strings>

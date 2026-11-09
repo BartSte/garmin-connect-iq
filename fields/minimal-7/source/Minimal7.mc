@@ -9,7 +9,8 @@ import Toybox.Lang;
 //
 // Layout (power-emphasis):
 //   Row 1: time of day (24 h)  |  activity timer
-//   Row 2: 3-second avg power (W)  — full width, zone-colored background
+//   Row 2: optional extra average | 3-second avg power (zone backgrounds)
+//          With the extra average off, 3-second power uses the full width.
 //   Row 3: speed (km/h)  |  cadence (rpm)
 //   Row 4: ascent (m)    |  distance (km)
 //
@@ -38,6 +39,9 @@ class Minimal7 extends WatchUi.DataField {
     hidden var mPowerBuf   as Array<Number> = [0, 0, 0];
     hidden var mPowerIdx   as Number = 0;
     hidden var mPowerCount as Number = 0; // tracks warm-up: 0–3 samples seen so far
+    hidden var mExtraPowerSeconds as Number = 0;
+    hidden var mExtraPowerAverage as Minimal7PowerAverage or Null = null;
+    hidden var mExtraPower as Number = 0;
 
     // ── FTP ───────────────────────────────────────────────────────────────
     // mFtp == 0 means no valid FTP is configured; zone colouring is disabled.
@@ -51,6 +55,12 @@ class Minimal7 extends WatchUi.DataField {
     }
 
     function loadSettings() as Void {
+        var seconds = Minimal7Logic.extraPowerSeconds(Application.Properties.getValue("extra_power_seconds"));
+        if (seconds != mExtraPowerSeconds) {
+            mExtraPowerSeconds = seconds;
+            mExtraPowerAverage = seconds > 0 ? new Minimal7PowerAverage(seconds) : null;
+            mExtraPower = 0;
+        }
         var ftpValue = Application.Properties.getValue("ftp");
         mFtp = Minimal7Logic.valueToNumber(ftpValue, MINIMAL7_DEFAULT_FTP);
 
@@ -86,6 +96,9 @@ class Minimal7 extends WatchUi.DataField {
         mPowerIdx = powerState[:nextIndex];
         mPowerCount = powerState[:sampleCount];
         m3sPower = powerState[:average];
+        if (mExtraPowerAverage != null) {
+            mExtraPower = (mExtraPowerAverage as Minimal7PowerAverage).push(rawPower);
+        }
 
         mSpeed = Minimal7Logic.speedToKph(info has :currentSpeed ? info.currentSpeed : null);
 
@@ -121,7 +134,7 @@ class Minimal7 extends WatchUi.DataField {
         var fg = defaultFgColor();
 
         drawRow1(dc, w, row1H, row1Y, fg);      // time of day | timer
-        drawPowerRow(dc, w, powerRowH, row2Y);  // 3s power (zone background)
+        drawPowerRow(dc, w, powerRowH, row2Y);  // power averages (zone backgrounds)
         drawRow3(dc, w, row3H, row3Y, fg);      // speed | cadence
         drawRow4(dc, w, row4H, row4Y, fg);      // ascent | distance
         drawDividers(dc, w, h, row1H, powerRowH, row3Y, row4Y, fg);
@@ -135,14 +148,24 @@ class Minimal7 extends WatchUi.DataField {
         drawCell(dc, half, y, half, rowH, fg, null, Minimal7Logic.formatTimer(mTimerMs));
     }
 
-    // ── Row 2: 3-second average power, full width, zone-colored ──────────
+    // Each power cell uses its own average with the same FTP-zone colors.
     hidden function drawPowerRow(dc as Graphics.Dc, w as Number, rowH as Number, y as Number) as Void {
-        var pct    = (mFtp > 0) ? (m3sPower * 100 / mFtp) : 0;
+        if (mExtraPowerSeconds > 0) {
+            var half = w / 2;
+            drawPowerCell(dc, 0, y, half, rowH, mExtraPower);
+            drawPowerCell(dc, half, y, w - half, rowH, m3sPower);
+        } else {
+            drawPowerCell(dc, 0, y, w, rowH, m3sPower);
+        }
+    }
+
+    hidden function drawPowerCell(dc as Graphics.Dc, x as Number, y as Number, w as Number, rowH as Number, power as Number) as Void {
+        var pct    = (mFtp > 0) ? (power * 100 / mFtp) : 0;
         var zoneBg = Minimal7Logic.powerZoneColor(pct);
         var zoneFg = Minimal7Logic.powerZoneTextColor(pct);
-        var text   = m3sPower.format("%d");
+        var text   = power.format("%d");
 
-        drawCell(dc, 0, y, w, rowH, zoneFg, zoneBg, text);
+        drawCell(dc, x, y, w, rowH, zoneFg, zoneBg, text);
     }
 
     // ── Row 3: speed (left)  |  cadence (right) ──────────────────────────
@@ -163,7 +186,7 @@ class Minimal7 extends WatchUi.DataField {
 
     // ── Grid dividers ─────────────────────────────────────────────────────
     // Three horizontal lines at every row boundary.
-    // Vertical lines split rows 1, 3, and 4; row 2 (power) is full-width.
+    // Row 2 has a vertical divider only when the extra average is enabled.
     hidden function drawDividers(
         dc as Graphics.Dc,
         w as Number,
@@ -184,8 +207,11 @@ class Minimal7 extends WatchUi.DataField {
         dc.drawLine(0, row3BoundaryY, w, row3BoundaryY); // between rows 2 and 3
         dc.drawLine(0, row4Y,         w, row4Y);         // between rows 3 and 4
 
-        // Vertical lines (not on the full-width power row)
+        // Vertical lines
         var mid = w / 2;
+        if (mExtraPowerSeconds > 0) {
+            dc.drawLine(mid, row2Y, mid, row3Y);
+        }
         dc.drawLine(mid, 0,             mid, row1H);         // row 1 split
         dc.drawLine(mid, row3Y,         mid, row4Y);         // row 3 split
         dc.drawLine(mid, row4Y,         mid, h);             // row 4 split
