@@ -4,6 +4,7 @@
 
 ### Unreleased
 
+- Excluded missing power readings from the 30-second average while retaining real zero-watt readings.
 - Added optional warm-up and cool-down phases with separate duration and power settings.
 - Added touch controls that change workout intensity by 1 percentage point per tap.
 - Applied intensity to the current target and all subsequent targets without changes to the saved settings.
@@ -26,6 +27,10 @@
 - Added on-device settings and unit coverage for interval and trainer-control decisions.
 
 ## Interval Workout
+
+### Unreleased
+
+- Excluded missing power readings from the 30-second average while retaining real zero-watt readings.
 
 ### v0.2.0
 

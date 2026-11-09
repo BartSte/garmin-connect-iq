@@ -23,4 +23,6 @@
     <string id="SecondsOption">Seconds</string>
     <string id="MinutesOption">Minutes</string>
     <string id="DurationMustBePositive">Duration must be at least 00:01</string>
+    <string id="CadenceMinTitle">Cadence Min (rpm)</string>
+    <string id="CadenceMaxTitle">Cadence Max (rpm)</string>
 </strings>

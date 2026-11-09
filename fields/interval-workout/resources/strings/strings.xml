@@ -24,4 +24,6 @@
     <string id="Zone6Label">Z6</string>
     <string id="Zone7Label">Z7</string>
     <string id="DurationMustBePositive">Duration must be at least 00:01</string>
+    <string id="CadenceMinTitle">Cadence Min (rpm)</string>
+    <string id="CadenceMaxTitle">Cadence Max (rpm)</string>
 </strings>

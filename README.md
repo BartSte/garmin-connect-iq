@@ -118,6 +118,25 @@ The scripts assume:
 
 ## Interval workout field
 
+Both interval fields use the same four-row layout:
+
+| Left cell | Right cell |
+| --- | --- |
+| Interval time remaining / start status | Ride timer |
+| 30s average power | 3s average power |
+| Target power or zone | Cadence |
+| Set progress | Repetition progress |
+
+The outdoor field shows its configured **target zone** (Z1–Z7), not a single target watt value.
+The indoor field shows the actual ERG target watts, adjusted for intensity.
+Both power cells use Coggan FTP-zone colors independently.
+The power averages use the latest 30 or 3 samples, approximately one per second.
+The cadence cell turns green within the default **80–110 rpm** range.
+Set **Cadence Min** and **Cadence Max** on the Edge to customize the inclusive range.
+The cadence value shows `--` when the sensor value is unavailable.
+Cadence bounds do not affect the saved interval schedule.
+
+
 `fields/interval-workout` is a full-screen training field for structured intervals on the **Edge Explore 2**.
 
 Behavior:
@@ -178,6 +197,12 @@ storage. Existing phone/Store-style XML settings remain supported as an
 alternative.
 
 ## Indoor interval workout field
+
+The indoor field uses the four-row layout above and retains the bottom ERG intensity controls.
+The interval countdown occupies the top-left cell. The ride timer remains on the top-right.
+The 30s and 3s power cells occupy the second row.
+The target watts and cadence occupy the third row.
+
 
 `fields/indoor-interval-workout` is a separate field for indoor ERG workouts.
 It adds trainer control, optional warm-up and cool-down phases, and live
