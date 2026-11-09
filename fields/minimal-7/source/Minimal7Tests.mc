@@ -9,6 +9,10 @@ function minimal7SettingsMenuReadsStoredValues(logger as Test.Logger) as Lang.Bo
     logger.debug("Checking native menu labels for stored and invalid durations");
     var originalSeconds = Application.Properties.getValue("extra_power_seconds");
     var originalFtp = Application.Properties.getValue("ftp");
+    var originalCadenceMin = Application.Properties.getValue("cadence_min");
+    var originalCadenceMax = Application.Properties.getValue("cadence_max");
+    Application.Properties.setValue("cadence_min", 80);
+    Application.Properties.setValue("cadence_max", 110);
     Application.Properties.setValue("ftp", 300);
     var choices = [0, 10, 20, 30, 60, 15];
     var labels = ["Off", "10s", "20s", "30s", "60s", "Off"];
@@ -18,13 +22,21 @@ function minimal7SettingsMenuReadsStoredValues(logger as Test.Logger) as Lang.Bo
         var menu = new Minimal7SettingsView();
         var ftpItem = menu.getItem(0) as WatchUi.MenuItem;
         var extraItem = menu.getItem(1) as WatchUi.MenuItem;
+        var cadenceMinItem = menu.getItem(2) as WatchUi.MenuItem;
+        var cadenceMaxItem = menu.getItem(3) as WatchUi.MenuItem;
         passed = passed && ftpItem.getId() == :ftp
             && (ftpItem.getSubLabel() as String).equals("300 W")
             && extraItem.getId() == :extra_power_seconds
-            && (extraItem.getSubLabel() as String).equals(labels[i]);
+            && (extraItem.getSubLabel() as String).equals(labels[i])
+            && cadenceMinItem.getId() == :cadence_min
+            && (cadenceMinItem.getSubLabel() as String).equals("80 rpm")
+            && cadenceMaxItem.getId() == :cadence_max
+            && (cadenceMaxItem.getSubLabel() as String).equals("110 rpm");
     }
     Application.Properties.setValue("extra_power_seconds", originalSeconds);
     Application.Properties.setValue("ftp", originalFtp);
+    Application.Properties.setValue("cadence_min", originalCadenceMin);
+    Application.Properties.setValue("cadence_max", originalCadenceMax);
     return passed;
 }
 
@@ -119,9 +131,11 @@ function minimal7MapsPowerZones(logger as Test.Logger) as Lang.Boolean {
 (:test)
 function minimal7CadenceHighlighting(logger as Test.Logger) as Lang.Boolean {
     logger.debug("Checking cadence target range colors");
-    return Minimal7Logic.cadenceTargetBgColor(90, 80, 95) == MINIMAL7_CADENCE_TARGET_COLOR
-        && Minimal7Logic.cadenceTargetFgColor(90, 80, 95, Graphics.COLOR_WHITE) == Graphics.COLOR_BLACK
-        && Minimal7Logic.cadenceTargetBgColor(70, 80, 95) == null;
+    return Minimal7Logic.cadenceTargetBgColor(100, 80, 110) == MINIMAL7_CADENCE_TARGET_COLOR
+        && Minimal7Logic.cadenceTargetBgColor(110, 80, 110) == MINIMAL7_CADENCE_TARGET_COLOR
+        && Minimal7Logic.cadenceTargetFgColor(100, 80, 110, Graphics.COLOR_WHITE) == Graphics.COLOR_BLACK
+        && Minimal7Logic.cadenceTargetBgColor(79, 80, 110) == null
+        && Minimal7Logic.cadenceTargetBgColor(111, 80, 110) == null;
 }
 
 (:test)
@@ -163,4 +177,19 @@ function minimal7FtpPickerClampsInitialValue(logger as Test.Logger) as Lang.Bool
     var factory = new Minimal7FtpPickerFactory();
     return factory.getIndex(49) == 0
         && factory.getIndex(601) == 550;
+}
+
+(:test)
+function minimal7CadencePickerMapsBounds(logger as Test.Logger) as Lang.Boolean {
+    logger.debug("Checking native cadence range pickers");
+    var low = new Minimal7CadencePickerFactory(40, 110);
+    var high = new Minimal7CadencePickerFactory(80, 150);
+    return low.getSize() == 71
+        && low.getIndex(80) == 40
+        && low.getIndex(120) == 70
+        && (low.getValue(70) as Number) == 110
+        && high.getSize() == 71
+        && high.getIndex(100) == 20
+        && high.getIndex(20) == 0
+        && (high.getValue(70) as Number) == 150;
 }
