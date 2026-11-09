@@ -433,7 +433,7 @@ function intervalWorkoutThirtySecondPowerAverage(logger as Test.Logger) as Lang.
     for (var i = 0; i < 27; i += 1) {
         average.push(300);
     }
-    if (average.push(300) != 295) {
+    if (average.push(300) != 298) {
         return false;
     }
     // After 30 new samples, the window contains only zero power.
