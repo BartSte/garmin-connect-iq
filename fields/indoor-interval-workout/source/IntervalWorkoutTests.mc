@@ -472,3 +472,26 @@ function intervalWorkoutCadenceRangeAndColors(logger as Test.Logger) as Lang.Boo
         && minPicker.getSize() == 71 && minPicker.getIndex(80) == 40
         && maxPicker.getSize() == 71 && maxPicker.getIndex(100) == 20;
 }
+
+(:test)
+function intervalWorkoutThirtySecondPowerAverage(logger as Test.Logger) as Lang.Boolean {
+    logger.debug("Checking 30s average warm-up and ring-buffer updates");
+    var average = new IntervalPowerAverage(30);
+    if (average.push(210) != 210
+        || average.push(240) != 225
+        || average.push(300) != 250) {
+        return false;
+    }
+    // Fill the remaining samples with the same power.
+    for (var i = 0; i < 27; i += 1) {
+        average.push(300);
+    }
+    if (average.push(300) != 295) {
+        return false;
+    }
+    // After 30 new samples, the window contains only zero power.
+    for (var j = 0; j < 30; j += 1) {
+        average.push(0);
+    }
+    return average.push(0) == 0;
+}
