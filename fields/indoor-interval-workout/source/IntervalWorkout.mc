@@ -307,7 +307,10 @@ class IntervalWorkout extends WatchUi.DataField {
         mPowerIdx = powerState[:nextIndex];
         mPowerCount = powerState[:sampleCount];
         m3sPower = powerState[:average];
-        m30sPower = m30sAverage.push(rawPower);
+        // Missing sensor data is not an observed zero-watt sample.
+        if (mHasPower) {
+            m30sPower = m30sAverage.push(rawPower);
+        }
     }
 
     hidden function powerText(power as Number) as String {
