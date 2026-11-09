@@ -244,7 +244,7 @@ UUID unchanged when you replace the sideloaded `.prg`.
 
 ## Minimal-7 settings
 
-Minimal-7 exposes FTP and an optional extra power average directly on the Edge Explore 2. This works for
+Minimal-7 exposes FTP, an optional extra power average, and cadence bounds directly on the Edge Explore 2. This works for
 the manually sideloaded build and does not require the Connect IQ Store, Garmin
 Connect, or Garmin Express.
 
@@ -255,6 +255,7 @@ Connect, or Garmin Express.
 4. Select **FTP (W)**, choose a value from 50 W through 600 W, and accept it.
 5. To show an eighth value, select **Extra power average** and choose **10s**, **20s**, **30s**, or **60s**.
 6. To restore the seven-value layout, set **Extra power average** to **Off** (the default).
+7. Set **Cadence Min** and **Cadence Max** in rpm. The defaults are **80–110 rpm**, including 100 rpm for VO2max intervals.
 
 The accepted settings persist after the Edge restarts. Canceling a picker preserves its previous value.
 Further changes happen entirely on the Edge; they do
@@ -274,6 +275,8 @@ the extra average appears on the left and 3s power appears on the right:
 
 The diagram uses labels for explanation. The field itself shows numbers only.
 Both power values use the same FTP-zone background and text colors, each based on its own average.
+The cadence cell turns green inside the inclusive target range and uses the normal background outside it.
+The on-device cadence pickers allow 40–150 rpm and prevent the minimum from exceeding the maximum.
 The row heights stay the same in both layouts.
 
 The extra average uses the most recent power samples, approximately one per second.
