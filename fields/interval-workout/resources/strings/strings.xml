@@ -24,4 +24,12 @@
     <string id="Zone6Label">Z6</string>
     <string id="Zone7Label">Z7</string>
     <string id="DurationMustBePositive">Duration must be at least 00:01</string>
+    <string id="SavedWorkoutsTitle">Saved workouts</string>
+    <string id="EmptyWorkout">Empty</string>
+    <string id="SaveCurrentWorkout">Save current workout</string>
+    <string id="LoadWorkout">Load workout</string>
+    <string id="RenameWorkout">Rename workout</string>
+    <string id="DeleteWorkout">Delete workout</string>
+    <string id="ReplaceWorkoutQuestion">Replace this saved workout?</string>
+    <string id="DeleteWorkoutQuestion">Delete this saved workout?</string>
 </strings>
