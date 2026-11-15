@@ -36,6 +36,11 @@ const INTERVAL_ZONE5_COLOR = 0xFF8800;
 const INTERVAL_ZONE6_COLOR = 0xAA0000;
 const INTERVAL_ZONE7_COLOR = 0x800080;
 const INTERVAL_POWER_UNKNOWN_COLOR = 0x666666;
+const INTERVAL_DEFAULT_CADENCE_MIN = 80;
+const INTERVAL_DEFAULT_CADENCE_MAX = 110;
+const INTERVAL_MIN_CADENCE = 40;
+const INTERVAL_MAX_CADENCE = 150;
+const INTERVAL_CADENCE_TARGET_COLOR = 0x00AA00;
 
 module IntervalWorkoutLogic {
 
@@ -94,6 +99,38 @@ module IntervalWorkoutLogic {
             return (parsed == null) ? fallback : parsed;
         }
         return fallback;
+    }
+
+    // Normalize even if XML settings contain reversed or out-of-range values.
+    function cadenceBounds(rawMin as Lang.Object or Null, rawMax as Lang.Object or Null) as Dictionary {
+        var minimum = valueToNumber(rawMin, INTERVAL_DEFAULT_CADENCE_MIN);
+        var maximum = valueToNumber(rawMax, INTERVAL_DEFAULT_CADENCE_MAX);
+        if (minimum < INTERVAL_MIN_CADENCE) { minimum = INTERVAL_MIN_CADENCE; }
+        if (minimum > INTERVAL_MAX_CADENCE) { minimum = INTERVAL_MAX_CADENCE; }
+        if (maximum < INTERVAL_MIN_CADENCE) { maximum = INTERVAL_MIN_CADENCE; }
+        if (maximum > INTERVAL_MAX_CADENCE) { maximum = INTERVAL_MAX_CADENCE; }
+        if (minimum > maximum) {
+            var oldMinimum = minimum;
+            minimum = maximum;
+            maximum = oldMinimum;
+        }
+        return { :minimum => minimum, :maximum => maximum };
+    }
+
+    function cadenceColors(
+        cadence as Number,
+        hasCadence as Boolean,
+        minimum as Number,
+        maximum as Number,
+        defaultFg as Number
+    ) as Dictionary {
+        if (hasCadence && cadence >= minimum && cadence <= maximum) {
+            return {
+                :foreground => Graphics.COLOR_BLACK,
+                :background => INTERVAL_CADENCE_TARGET_COLOR
+            };
+        }
+        return { :foreground => defaultFg, :background => null };
     }
 
     function durationUnitMultiplier(value as Lang.Object or Null) as Number {
@@ -435,5 +472,32 @@ module IntervalWorkoutLogic {
             :state => nextState,
             :transitions => transitions
         };
+    }
+}
+
+ 
+// Maintain the latest 30 samples, with no synthetic history before the first sample.
+class IntervalPowerAverage {
+    hidden var mSamples as Array<Number>;
+    hidden var mIndex as Number = 0;
+    hidden var mCount as Number = 0;
+    hidden var mSum as Number = 0;
+
+    function initialize(seconds as Number) {
+        mSamples = new [seconds];
+        for (var i = 0; i < seconds; i += 1) {
+            mSamples[i] = 0;
+        }
+    }
+
+    function push(power as Number) as Number {
+        mSum -= mSamples[mIndex];
+        mSamples[mIndex] = power;
+        mSum += power;
+        mIndex = (mIndex + 1) % mSamples.size();
+        if (mCount < mSamples.size()) {
+            mCount += 1;
+        }
+        return (mSum + mCount / 2) / mCount;
     }
 }

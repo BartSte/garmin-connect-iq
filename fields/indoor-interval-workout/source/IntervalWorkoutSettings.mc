@@ -7,6 +7,7 @@ const INTERVAL_PICKER_PLAIN = 0;
 const INTERVAL_PICKER_FTP = 1;
 const INTERVAL_PICKER_SECONDS = 2;
 const INTERVAL_PICKER_POWER = 3;
+const INTERVAL_PICKER_CADENCE = 4;
 
 module IntervalWorkoutSettings {
 
@@ -40,10 +41,20 @@ module IntervalWorkoutSettings {
         if (kind == INTERVAL_PICKER_POWER) {
             return value.format("%d") + " W";
         }
+        if (kind == INTERVAL_PICKER_CADENCE) {
+            return value.format("%d") + " rpm";
+        }
         if (kind == INTERVAL_PICKER_SECONDS) {
             return value.format("%02d");
         }
         return value.format("%d");
+    }
+
+    function cadenceBounds() as Dictionary {
+        return IntervalWorkoutLogic.cadenceBounds(
+            Application.Properties.getValue("cadence_min"),
+            Application.Properties.getValue("cadence_max")
+        );
     }
 
     function clampDuration(seconds as Number) as Number {
@@ -160,6 +171,17 @@ class IntervalWorkoutSettingsMenu extends WatchUi.Menu2 {
             :set_recovery_power,
             null
         ));
+        var cadence = IntervalWorkoutSettings.cadenceBounds();
+        addItem(new WatchUi.MenuItem(
+            Rez.Strings.CadenceMinTitle,
+            IntervalWorkoutSettings.formatPickerValue(cadence[:minimum], INTERVAL_PICKER_CADENCE),
+            :cadence_min, null
+        ));
+        addItem(new WatchUi.MenuItem(
+            Rez.Strings.CadenceMaxTitle,
+            IntervalWorkoutSettings.formatPickerValue(cadence[:maximum], INTERVAL_PICKER_CADENCE),
+            :cadence_max, null
+        ));
     }
 }
 
@@ -274,6 +296,20 @@ class IntervalWorkoutSettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
                 INTERVAL_PICKER_POWER,
                 "set_recovery_power",
                 item
+            );
+        } else if (id == :cadence_min) {
+            var cadence = IntervalWorkoutSettings.cadenceBounds();
+            pushSinglePicker(
+                Rez.Strings.CadenceMinTitle, cadence[:minimum],
+                INTERVAL_MIN_CADENCE, cadence[:maximum],
+                INTERVAL_PICKER_CADENCE, "cadence_min", item
+            );
+        } else if (id == :cadence_max) {
+            var cadence = IntervalWorkoutSettings.cadenceBounds();
+            pushSinglePicker(
+                Rez.Strings.CadenceMaxTitle, cadence[:maximum],
+                cadence[:minimum], INTERVAL_MAX_CADENCE,
+                INTERVAL_PICKER_CADENCE, "cadence_max", item
             );
         }
     }

@@ -79,4 +79,10 @@
     <setting propertyKey="@Properties.set_recovery_power" title="@Strings.SetRecoveryPowerTitle">
         <settingConfig type="numeric" />
     </setting>
+    <setting propertyKey="@Properties.cadence_min" title="@Strings.CadenceMinTitle">
+        <settingConfig type="numeric" />
+    </setting>
+    <setting propertyKey="@Properties.cadence_max" title="@Strings.CadenceMaxTitle">
+        <settingConfig type="numeric" />
+    </setting>
 </settings>

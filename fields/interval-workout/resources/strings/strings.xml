@@ -32,4 +32,6 @@
     <string id="DeleteWorkout">Delete workout</string>
     <string id="ReplaceWorkoutQuestion">Replace this saved workout?</string>
     <string id="DeleteWorkoutQuestion">Delete this saved workout?</string>
+    <string id="CadenceMinTitle">Cadence Min (rpm)</string>
+    <string id="CadenceMaxTitle">Cadence Max (rpm)</string>
 </strings>
